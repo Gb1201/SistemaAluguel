@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, Plus, Trash2 } from 'lucide-react'
 
 const API = 'http://localhost:8080/clientes'
 
@@ -12,16 +12,19 @@ const formVazio = {
   profissao: '',
 }
 
+const rendimentoVazio = { entidadeEmpregadora: '', valor: '' }
+
 export default function CadastroCliente() {
   const navigate = useNavigate()
   const { id }   = useParams()
 
-  const [form, setForm]         = useState(formVazio)
-  const [erros, setErros]       = useState({})
-  const [salvando, setSalvando] = useState(false)
-  const [erroApi, setErroApi]   = useState('')
+  const [form, setForm]               = useState(formVazio)
+  const [rendimentos, setRendimentos] = useState([{ ...rendimentoVazio }])
+  const [erros, setErros]             = useState({})
+  const [salvando, setSalvando]       = useState(false)
+  const [erroApi, setErroApi]         = useState('')
 
-  // ── GET /clientes/{id} — pré-preenche o formulário ao editar ─────
+  
   useEffect(() => {
     if (!id) return
 
@@ -31,6 +34,10 @@ export default function CadastroCliente() {
         if (!response.ok) throw new Error(`Erro ${response.status}: ${response.statusText}`)
         const data = await response.json()
         setForm(data)
+        // Pré-preenche rendimentos se vieram da API
+        if (data.rendimentos && data.rendimentos.length > 0) {
+          setRendimentos(data.rendimentos)
+        }
       } catch (err) {
         setErroApi(err.message || 'Não foi possível carregar os dados do cliente.')
       }
@@ -39,42 +46,87 @@ export default function CadastroCliente() {
     carregarCliente()
   }, [id])
 
+ 
   const handleChange = (e) => {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
     if (erros[name]) setErros(prev => ({ ...prev, [name]: '' }))
   }
 
+  
+  const handleRendimentoChange = (index, e) => {
+    const { name, value } = e.target
+    setRendimentos(prev =>
+      prev.map((r, i) => i === index ? { ...r, [name]: value } : r)
+    )
+  }
+
+  const adicionarRendimento = () => {
+    if (rendimentos.length < 3) {
+      setRendimentos(prev => [...prev, { ...rendimentoVazio }])
+    }
+  }
+
+  const removerRendimento = (index) => {
+    // Mantém pelo menos 1 campo
+    if (rendimentos.length === 1) {
+      setRendimentos([{ ...rendimentoVazio }])
+    } else {
+      setRendimentos(prev => prev.filter((_, i) => i !== index))
+    }
+  }
+
+  
   const validar = () => {
     const novosErros = {}
     if (!form.nome.trim()) novosErros.nome = 'Nome é obrigatório.'
     if (!form.cpf.trim())  novosErros.cpf  = 'CPF é obrigatório.'
+
+    // Valida rendimentos preenchidos parcialmente
+    rendimentos.forEach((r, i) => {
+      const temEntidade = r.entidadeEmpregadora.trim() !== ''
+      const temValor    = r.valor !== '' && r.valor !== null
+      if (temEntidade && !temValor)  novosErros[`rendimento_valor_${i}`]    = 'Informe o valor.'
+      if (!temEntidade && temValor)  novosErros[`rendimento_entidade_${i}`] = 'Informe a entidade.'
+    })
+
     setErros(novosErros)
     return Object.keys(novosErros).length === 0
   }
 
+  
   const handleSalvar = async () => {
     if (!validar()) return
 
     setSalvando(true)
     setErroApi('')
 
+    
+    const rendimentosValidos = rendimentos.filter(
+      r => r.entidadeEmpregadora.trim() !== '' && r.valor !== ''
+    )
+
+    const payload = {
+      ...form,
+      rendimentos: rendimentosValidos,
+    }
+
     try {
       if (id) {
-        // ── PUT /clientes/{id} ──────────────────────────────────────
+        
         const response = await fetch(`${API}/${id}`, {
           method:  'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify(form),
+          body:    JSON.stringify(payload),
         })
         if (!response.ok) throw new Error(`Erro ao atualizar: ${response.status} ${response.statusText}`)
 
       } else {
-        // ── POST /clientes ──────────────────────────────────────────
+        
         const response = await fetch(API, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify(form),
+          body:    JSON.stringify(payload),
         })
         if (!response.ok) throw new Error(`Erro ao cadastrar: ${response.status} ${response.statusText}`)
       }
@@ -108,7 +160,6 @@ export default function CadastroCliente() {
         </h4>
       </div>
 
-      {/* Card do formulário */}
       <div className="card shadow-sm border-0" style={{ maxWidth: 640 }}>
         <div className="card-body p-4">
           <div className="row g-3">
@@ -181,6 +232,78 @@ export default function CadastroCliente() {
                 value={form.profissao}
                 onChange={handleChange}
               />
+            </div>
+
+            {/* ── Seção de Rendimentos ─────────────────────────────── */}
+            <div className="col-12 mt-2">
+              <div className="d-flex align-items-center justify-content-between mb-2">
+                <label className="form-label fw-medium mb-0">
+                  Rendimentos
+                  <span className="text-muted fw-normal ms-1" style={{ fontSize: 12 }}>
+                    (máx. 3)
+                  </span>
+                </label>
+                {rendimentos.length < 3 && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                    onClick={adicionarRendimento}
+                  >
+                    <Plus size={13} />
+                    Adicionar
+                  </button>
+                )}
+              </div>
+
+              <div className="d-flex flex-column gap-2">
+                {rendimentos.map((r, index) => (
+                  <div key={index} className="border rounded p-3" style={{ background: '#f8f9fc' }}>
+                    <div className="d-flex align-items-center justify-content-between mb-2">
+                      <span className="text-muted" style={{ fontSize: 12, fontWeight: 500 }}>
+                        Rendimento {index + 1}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger py-0 px-2 d-flex align-items-center gap-1"
+                        onClick={() => removerRendimento(index)}
+                        title="Remover"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                    <div className="row g-2">
+                      <div className="col-md-7">
+                        <input
+                          type="text"
+                          name="entidadeEmpregadora"
+                          className={`form-control form-control-sm ${erros[`rendimento_entidade_${index}`] ? 'is-invalid' : ''}`}
+                          placeholder="Entidade empregadora"
+                          value={r.entidadeEmpregadora}
+                          onChange={e => handleRendimentoChange(index, e)}
+                        />
+                        {erros[`rendimento_entidade_${index}`] && (
+                          <div className="invalid-feedback">{erros[`rendimento_entidade_${index}`]}</div>
+                        )}
+                      </div>
+                      <div className="col-md-5">
+                        <input
+                          type="number"
+                          name="valor"
+                          className={`form-control form-control-sm ${erros[`rendimento_valor_${index}`] ? 'is-invalid' : ''}`}
+                          placeholder="Valor (R$)"
+                          min="0"
+                          step="0.01"
+                          value={r.valor}
+                          onChange={e => handleRendimentoChange(index, e)}
+                        />
+                        {erros[`rendimento_valor_${index}`] && (
+                          <div className="invalid-feedback">{erros[`rendimento_valor_${index}`]}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
           </div>

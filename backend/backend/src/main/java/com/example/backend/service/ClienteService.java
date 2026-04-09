@@ -9,9 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.backend.dtos.ClienteDTO;
 import com.example.backend.model.Cliente;
+import com.example.backend.model.Rendimento;
 import com.example.backend.repository.ClienteRepository;
-
-
 
 @Service
 @Transactional
@@ -20,17 +19,22 @@ public class ClienteService {
     @Autowired
     private ClienteRepository clienteRepository;
 
-    // Criar cliente
+    // Criar cliente — associa cada rendimento ao cliente antes de salvar
     public Cliente criarCliente(Cliente cliente) {
+        if (cliente.getRendimentos() != null) {
+            for (Rendimento r : cliente.getRendimentos()) {
+                r.setCliente(cliente);
+            }
+        }
         return clienteRepository.save(cliente);
     }
 
-    //listar clietes
+    // Listar todos os clientes
     public List<Cliente> listarClientes() {
         return clienteRepository.findAll();
     }
 
-    // lister clientes pelo DTO
+    // Listar clientes pelo DTO (id + nome)
     public List<ClienteDTO> listarClientesDTO() {
         return clienteRepository.findAll()
                 .stream()
@@ -38,12 +42,12 @@ public class ClienteService {
                 .toList();
     }
 
-    // buscar cliente
+    // Buscar cliente por id
     public Optional<Cliente> buscarClientePorId(Long id) {
         return clienteRepository.findById(id);
     }
 
-    // atualizar cliente
+    // Atualizar cliente — substitui os rendimentos existentes pelos novos
     public Cliente atualizarCliente(Long id, Cliente clienteAtualizado) {
         return clienteRepository.findById(id)
             .map(cliente -> {
@@ -52,12 +56,24 @@ public class ClienteService {
                 cliente.setCpf(clienteAtualizado.getCpf());
                 cliente.setEndereco(clienteAtualizado.getEndereco());
                 cliente.setProfissao(clienteAtualizado.getProfissao());
+
+                
+                cliente.getRendimentos().clear();
+
+                
+                if (clienteAtualizado.getRendimentos() != null) {
+                    for (Rendimento r : clienteAtualizado.getRendimentos()) {
+                        r.setCliente(cliente);
+                        cliente.getRendimentos().add(r);
+                    }
+                }
+
                 return clienteRepository.save(cliente);
             })
             .orElseThrow(() -> new RuntimeException("Cliente não encontrado com id " + id));
     }
 
-    // Deletar um cliente
+    // Deletar cliente 
     public void deletarCliente(Long id) {
         if (clienteRepository.existsById(id)) {
             clienteRepository.deleteById(id);
