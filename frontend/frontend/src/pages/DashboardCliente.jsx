@@ -12,12 +12,16 @@ export default function DashboardCliente({ usuario }) {
   const [erroModal, setErroModal] = useState('')
   const [enviando, setEnviando] = useState(false)
 
-  // ✅ GET real do backend
-  useEffect(() => {
+  //  Função para carregar carros disponíveis
+  const carregarCarros = () => {
     fetch('http://localhost:8080/automoveis/disponiveis')
       .then(res => res.json())
       .then(data => setCarros(data))
       .catch(err => console.error('Erro ao buscar carros:', err))
+  }
+
+  useEffect(() => {
+    carregarCarros()
   }, [])
 
   const carrosFiltrados = carros.filter(c =>
@@ -48,6 +52,7 @@ export default function DashboardCliente({ usuario }) {
       setErroModal('Informe as datas.')
       return
     }
+
     if (new Date(dataFim) <= new Date(dataInicio)) {
       setErroModal('Data de devolução deve ser após a retirada.')
       return
@@ -57,7 +62,30 @@ export default function DashboardCliente({ usuario }) {
     setErroModal('')
 
     try {
-      await new Promise(r => setTimeout(r, 600))
+      // simula usuario logado com id 1 do banco de dados que no caso seria joao guilherme
+      const clienteId = 1
+
+      console.log("Enviando pedido:", {
+        clienteId,
+        automovelId: carroSelecionado.id,
+        dataInicio,
+        dataFim
+      })
+
+      const response = await fetch('http://localhost:8080/pedidos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clienteId,
+          automovelId: carroSelecionado.id,
+          dataInicio,
+          dataFim
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao criar pedido')
+      }
 
       const novoPedido = {
         id: pedidos.length + 1,
@@ -65,28 +93,35 @@ export default function DashboardCliente({ usuario }) {
         dataInicio,
         dataFim,
         dias: calcularDias(),
-        total: 0, // sem diária por enquanto
+        total: 0,
         status: 'Pendente',
       }
 
       setPedidos(prev => [novoPedido, ...prev])
+
+      // 🔄 Atualiza carros disponíveis
+      carregarCarros()
+
       fecharModal()
 
     } catch (err) {
-      setErroModal('Não foi possível enviar o pedido.')
+      console.error(err)
+      setErroModal('Erro ao enviar pedido. Verifique o servidor.')
     } finally {
       setEnviando(false)
     }
   }
 
-  const dias = calcularDias()
-
   return (
     <div className="container py-4">
 
       <div className="mb-4">
-        <h4 className="fw-semibold mb-0">Olá, {usuario?.nome?.split(' ')[0]} 👋</h4>
-        <p className="text-muted small mb-0">Escolha um carro e solicite seu aluguel</p>
+        <h4 className="fw-semibold mb-0">
+          Olá, {usuario?.nome?.split(' ')[0] || 'Cliente'} 👋
+        </h4>
+        <p className="text-muted small mb-0">
+          Escolha um carro e solicite seu aluguel
+        </p>
       </div>
 
       <div className="card border-0 shadow-sm mb-4">
@@ -95,6 +130,7 @@ export default function DashboardCliente({ usuario }) {
             <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2">
               <Car size={16} className="text-primary" /> Carros disponíveis
             </h6>
+
             <div className="input-group" style={{ maxWidth: 260 }}>
               <span className="input-group-text bg-white border-end-0">
                 <Search size={14} className="text-muted" />
@@ -149,7 +185,7 @@ export default function DashboardCliente({ usuario }) {
         </div>
       </div>
 
-      {/* Modal simplificado sem diária */}
+      {/* Modal */}
       {modalAberto && (
         <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.45)' }}>
           <div className="modal-dialog modal-dialog-centered">
@@ -158,21 +194,31 @@ export default function DashboardCliente({ usuario }) {
                 <h5 className="modal-title fw-semibold">Solicitar aluguel</h5>
                 <button className="btn-close" onClick={fecharModal} />
               </div>
+
               <div className="modal-body">
                 <p className="text-muted small mb-3">
-                  <strong>{carroSelecionado?.marca} {carroSelecionado?.modelo}</strong>
+                  <strong>
+                    {carroSelecionado?.marca} {carroSelecionado?.modelo}
+                  </strong>
                 </p>
 
                 <div className="row g-3">
                   <div className="col-6">
-                    <input type="date" className="form-control"
+                    <input
+                      type="date"
+                      className="form-control"
                       value={dataInicio}
-                      onChange={e => setDataInicio(e.target.value)} />
+                      onChange={e => setDataInicio(e.target.value)}
+                    />
                   </div>
+
                   <div className="col-6">
-                    <input type="date" className="form-control"
+                    <input
+                      type="date"
+                      className="form-control"
                       value={dataFim}
-                      onChange={e => setDataFim(e.target.value)} />
+                      onChange={e => setDataFim(e.target.value)}
+                    />
                   </div>
                 </div>
 
@@ -184,12 +230,23 @@ export default function DashboardCliente({ usuario }) {
               </div>
 
               <div className="modal-footer border-0 pt-0">
-                <button className="btn btn-outline-secondary btn-sm" onClick={fecharModal}>
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={fecharModal}
+                >
                   Cancelar
                 </button>
-                <button className="btn btn-primary btn-sm"
-                  onClick={handleSolicitarAluguel}>
-                  Confirmar pedido
+
+                <button
+                  className="btn btn-primary btn-sm d-flex align-items-center gap-1"
+                  onClick={handleSolicitarAluguel}
+                  disabled={enviando}
+                >
+                  {enviando
+                    ? <span className="spinner-border spinner-border-sm" />
+                    : <PlusCircle size={13} />
+                  }
+                  {enviando ? 'Enviando...' : 'Confirmar pedido'}
                 </button>
               </div>
             </div>

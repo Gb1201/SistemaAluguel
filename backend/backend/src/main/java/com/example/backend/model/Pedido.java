@@ -12,7 +12,8 @@ public class Pedido {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDate data;
+    private LocalDate dataInicio;
+    private LocalDate dataFim;
 
     @Enumerated(EnumType.STRING)
     private StatusPedido status;
@@ -25,28 +26,30 @@ public class Pedido {
     @JoinColumn(name = "agente_id")
     private Agente agente;
 
-    
-    public Pedido() {
-    }
+    @ManyToOne
+    @JoinColumn(name = "automovel_id")
+    private Automovel automovel;
 
-   
-    public Pedido(LocalDate data, StatusPedido status) {
-        this.data = data;
-        this.status = status;
-    }
-
-    
+    public Pedido() {}
 
     public Long getId() {
         return id;
     }
 
-    public LocalDate getData() {
-        return data;
+    public LocalDate getDataInicio() {
+        return dataInicio;
     }
 
-    public void setData(LocalDate data) {
-        this.data = data;
+    public void setDataInicio(LocalDate dataInicio) {
+        this.dataInicio = dataInicio;
+    }
+
+    public LocalDate getDataFim() {
+        return dataFim;
+    }
+
+    public void setDataFim(LocalDate dataFim) {
+        this.dataFim = dataFim;
     }
 
     public StatusPedido getStatus() {
@@ -71,5 +74,13 @@ public class Pedido {
 
     public void setAgente(Agente agente) {
         this.agente = agente;
+    }
+
+    public Automovel getAutomovel() {
+        return automovel;
+    }
+
+    public void setAutomovel(Automovel automovel) {
+        this.automovel = automovel;
     }
 }
