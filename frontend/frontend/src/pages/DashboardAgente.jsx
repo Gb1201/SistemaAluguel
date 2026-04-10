@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ClipboardList, CheckCircle, XCircle, Eye, PlusCircle, Car } from 'lucide-react'
 
-// Pedidos mockados
+const API_AUTOMOVEIS = 'http://localhost:8080/automoveis'
+
 const pedidosMock = [
   { id: 1, cliente: 'Ana Souza',      carro: 'Toyota Corolla',   dataInicio: '2025-08-01', dataFim: '2025-08-05', dias: 4, total: 720,  status: 'Pendente'  },
   { id: 2, cliente: 'Carlos Lima',    carro: 'Honda Civic',      dataInicio: '2025-08-03', dataFim: '2025-08-07', dias: 4, total: 800,  status: 'Pendente'  },
@@ -9,14 +10,7 @@ const pedidosMock = [
   { id: 4, cliente: 'Marcos Souza',   carro: 'Hyundai HB20',     dataInicio: '2025-07-20', dataFim: '2025-07-22', dias: 2, total: 240,  status: 'Reprovado' },
 ]
 
-// Carros mockados iniciais
-const carrosMock = [
-  { id: 1, marca: 'Toyota',     modelo: 'Corolla',   ano: 2022, placa: 'ABC-1234', diaria: 180 },
-  { id: 2, marca: 'Honda',      modelo: 'Civic',     ano: 2023, placa: 'DEF-5678', diaria: 200 },
-  { id: 3, marca: 'Volkswagen', modelo: 'Golf',      ano: 2021, placa: 'GHI-9012', diaria: 160 },
-]
-
-const carroVazio = { marca: '', modelo: '', ano: '', placa: '', diaria: '' }
+const carroVazio = { marca: '', modelo: '', ano: '', placa: '' }
 
 const BADGE = {
   Pendente:  'text-bg-warning',
@@ -25,18 +19,36 @@ const BADGE = {
 }
 
 export default function DashboardAgente({ usuario }) {
-  const [pedidos, setPedidos]             = useState(pedidosMock)
-  const [carros, setCarros]               = useState(carrosMock)
-  const [filtro, setFiltro]               = useState('Todos')
-  const [abaAtiva, setAbaAtiva]           = useState('pedidos') // 'pedidos' | 'carros'
+  const [pedidos, setPedidos]           = useState(pedidosMock)
+  const [carros, setCarros]             = useState([])
+  const [carregandoCarros, setCarregandoCarros] = useState(true)
+  const [filtro, setFiltro]             = useState('Todos')
+  const [abaAtiva, setAbaAtiva]         = useState('pedidos')
   const [pedidoDetalhe, setPedidoDetalhe] = useState(null)
-  const [processando, setProcessando]     = useState(null)
+  const [processando, setProcessando]   = useState(null)
 
-  // Estado do modal de cadastro de carro
-  const [modalCarro, setModalCarro]   = useState(false)
-  const [formCarro, setFormCarro]     = useState(carroVazio)
-  const [errosCarro, setErrosCarro]   = useState({})
+  const [modalCarro, setModalCarro]     = useState(false)
+  const [formCarro, setFormCarro]       = useState(carroVazio)
+  const [errosCarro, setErrosCarro]     = useState({})
   const [salvandoCarro, setSalvandoCarro] = useState(false)
+  const [erroApiCarro, setErroApiCarro] = useState('')
+
+  // ── GET /automoveis ──────────────────────────────────────────────
+  const carregarAutomoveis = async () => {
+    setCarregandoCarros(true)
+    try {
+      const response = await fetch(API_AUTOMOVEIS)
+      if (!response.ok) throw new Error(`Erro ${response.status}`)
+      const data = await response.json()
+      setCarros(data)
+    } catch (err) {
+      console.error('Erro ao carregar automóveis:', err.message)
+    } finally {
+      setCarregandoCarros(false)
+    }
+  }
+
+  useEffect(() => { carregarAutomoveis() }, [])
 
   // ── Pedidos ──────────────────────────────────────────────────────
   const filtrados = filtro === 'Todos' ? pedidos : pedidos.filter(p => p.status === filtro)
@@ -55,7 +67,7 @@ export default function DashboardAgente({ usuario }) {
     }
   }
 
-  // ── Cadastro de carro ────────────────────────────────────────────
+  // ── Cadastro de automóvel ────────────────────────────────────────
   const handleCarroChange = (e) => {
     const { name, value } = e.target
     setFormCarro(prev => ({ ...prev, [name]: value }))
@@ -64,11 +76,10 @@ export default function DashboardAgente({ usuario }) {
 
   const validarCarro = () => {
     const erros = {}
-    if (!formCarro.marca.trim())   erros.marca  = 'Obrigatório.'
-    if (!formCarro.modelo.trim())  erros.modelo = 'Obrigatório.'
-    if (!formCarro.ano)            erros.ano    = 'Obrigatório.'
-    if (!formCarro.placa.trim())   erros.placa  = 'Obrigatório.'
-    if (!formCarro.diaria)         erros.diaria = 'Obrigatório.'
+    if (!formCarro.marca.trim())  erros.marca  = 'Obrigatório.'
+    if (!formCarro.modelo.trim()) erros.modelo = 'Obrigatório.'
+    if (!formCarro.ano)           erros.ano    = 'Obrigatório.'
+    if (!formCarro.placa.trim())  erros.placa  = 'Obrigatório.'
     setErrosCarro(erros)
     return Object.keys(erros).length === 0
   }
@@ -76,28 +87,30 @@ export default function DashboardAgente({ usuario }) {
   const handleSalvarCarro = async () => {
     if (!validarCarro()) return
     setSalvandoCarro(true)
+    setErroApiCarro('')
     try {
-      // ── Substituir por POST real quando backend estiver pronto ──
-      // const response = await fetch('http://localhost:8080/carros', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formCarro),
-      // })
-      // const novoCarro = await response.json()
-
-      await new Promise(r => setTimeout(r, 600))
-      const novoCarro = {
-        ...formCarro,
-        id:     carros.length + 1,
-        ano:    Number(formCarro.ano),
-        diaria: Number(formCarro.diaria),
+      // ── POST /automoveis ─────────────────────────────────────────
+      const response = await fetch(API_AUTOMOVEIS, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          marca:  formCarro.marca,
+          modelo: formCarro.modelo,
+          ano:    Number(formCarro.ano),
+          placa:  formCarro.placa,
+        }),
+      })
+      if (!response.ok) {
+        const msg = await response.text()
+        throw new Error(msg || `Erro ${response.status}`)
       }
-      setCarros(prev => [novoCarro, ...prev])
+      const novoAutomovel = await response.json()
+      setCarros(prev => [novoAutomovel, ...prev])
       setModalCarro(false)
       setFormCarro(carroVazio)
-      setAbaAtiva('carros') // muda para a aba de carros após cadastrar
-    } catch {
-      alert('Não foi possível cadastrar o carro.')
+      setAbaAtiva('carros')
+    } catch (err) {
+      setErroApiCarro(err.message || 'Não foi possível cadastrar o automóvel.')
     } finally {
       setSalvandoCarro(false)
     }
@@ -107,9 +120,9 @@ export default function DashboardAgente({ usuario }) {
     setModalCarro(false)
     setFormCarro(carroVazio)
     setErrosCarro({})
+    setErroApiCarro('')
   }
 
-  // Métricas
   const pendentes  = pedidos.filter(p => p.status === 'Pendente').length
   const aprovados  = pedidos.filter(p => p.status === 'Aprovado').length
   const reprovados = pedidos.filter(p => p.status === 'Reprovado').length
@@ -132,10 +145,10 @@ export default function DashboardAgente({ usuario }) {
       {/* Cards de resumo */}
       <div className="row g-3 mb-4">
         {[
-          { label: 'Pendentes',  valor: pendentes,      cor: '#fff8e1', texto: '#b45309' },
-          { label: 'Aprovados',  valor: aprovados,      cor: '#e8f5e9', texto: '#2e7d32' },
-          { label: 'Reprovados', valor: reprovados,     cor: '#fce4e4', texto: '#b91c1c' },
-          { label: 'Carros',     valor: carros.length,  cor: '#e8eaf6', texto: '#3949ab' },
+          { label: 'Pendentes',  valor: pendentes,     cor: '#fff8e1', texto: '#b45309' },
+          { label: 'Aprovados',  valor: aprovados,     cor: '#e8f5e9', texto: '#2e7d32' },
+          { label: 'Reprovados', valor: reprovados,    cor: '#fce4e4', texto: '#b91c1c' },
+          { label: 'Carros',     valor: carros.length, cor: '#e8eaf6', texto: '#3949ab' },
         ].map(c => (
           <div className="col-6 col-md-3" key={c.label}>
             <div className="card border-0 h-100" style={{ background: c.cor }}>
@@ -154,15 +167,14 @@ export default function DashboardAgente({ usuario }) {
           <button className={`nav-link d-flex align-items-center gap-2 ${abaAtiva === 'pedidos' ? 'active' : ''}`}
             onClick={() => setAbaAtiva('pedidos')}>
             <ClipboardList size={15} /> Pedidos
-            {pendentes > 0 && (
-              <span className="badge text-bg-warning rounded-pill">{pendentes}</span>
-            )}
+            {pendentes > 0 && <span className="badge text-bg-warning rounded-pill">{pendentes}</span>}
           </button>
         </li>
         <li className="nav-item">
           <button className={`nav-link d-flex align-items-center gap-2 ${abaAtiva === 'carros' ? 'active' : ''}`}
             onClick={() => setAbaAtiva('carros')}>
-            <Car size={15} /> Carros <span className="badge text-bg-secondary rounded-pill">{carros.length}</span>
+            <Car size={15} /> Carros
+            <span className="badge text-bg-secondary rounded-pill">{carros.length}</span>
           </button>
         </li>
       </ul>
@@ -230,45 +242,49 @@ export default function DashboardAgente({ usuario }) {
         <div className="card border-0 shadow-sm">
           <div className="card-body">
             <h6 className="fw-semibold mb-3">Frota cadastrada</h6>
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
-                <thead className="table-light">
-                  <tr><th>#</th><th>Marca</th><th>Modelo</th><th>Ano</th><th>Placa</th><th>Diária</th></tr>
-                </thead>
-                <tbody>
-                  {carros.length === 0 ? (
-                    <tr><td colSpan={6} className="text-center text-muted py-4">Nenhum carro cadastrado.</td></tr>
-                  ) : carros.map((c, i) => (
-                    <tr key={c.id}>
-                      <td className="text-muted small">{i + 1}</td>
-                      <td className="fw-medium">{c.marca}</td>
-                      <td>{c.modelo}</td>
-                      <td className="text-muted">{c.ano}</td>
-                      <td><span className="badge text-bg-secondary">{c.placa}</span></td>
-                      <td className="text-success fw-medium">R$ {Number(c.diaria).toLocaleString('pt-BR')}/dia</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {carregandoCarros ? (
+              <div className="text-center py-4 text-muted">
+                <span className="spinner-border spinner-border-sm me-2" />Carregando...
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0">
+                  <thead className="table-light">
+                    <tr><th>#</th><th>Marca</th><th>Modelo</th><th>Ano</th><th>Placa</th></tr>
+                  </thead>
+                  <tbody>
+                    {carros.length === 0 ? (
+                      <tr><td colSpan={5} className="text-center text-muted py-4">Nenhum carro cadastrado.</td></tr>
+                    ) : carros.map((c, i) => (
+                      <tr key={c.id}>
+                        <td className="text-muted small">{i + 1}</td>
+                        <td className="fw-medium">{c.marca}</td>
+                        <td>{c.modelo}</td>
+                        <td className="text-muted">{c.ano}</td>
+                        <td><span className="badge text-bg-secondary">{c.placa}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* ── Modal: Cadastrar carro ───────────────────────────────── */}
+      {/* ── Modal: Cadastrar automóvel ───────────────────────────── */}
       {modalCarro && (
         <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.45)' }}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content border-0 shadow">
               <div className="modal-header border-0 pb-0">
                 <h5 className="modal-title fw-semibold d-flex align-items-center gap-2">
-                  <Car size={18} /> Cadastrar carro
+                  <Car size={18} /> Cadastrar automóvel
                 </h5>
                 <button className="btn-close" onClick={fecharModalCarro} />
               </div>
               <div className="modal-body">
                 <div className="row g-3">
-
                   <div className="col-md-6">
                     <label className="form-label fw-medium small">Marca <span className="text-danger">*</span></label>
                     <input type="text" name="marca"
@@ -276,7 +292,6 @@ export default function DashboardAgente({ usuario }) {
                       placeholder="Ex: Toyota" value={formCarro.marca} onChange={handleCarroChange} />
                     {errosCarro.marca && <div className="invalid-feedback">{errosCarro.marca}</div>}
                   </div>
-
                   <div className="col-md-6">
                     <label className="form-label fw-medium small">Modelo <span className="text-danger">*</span></label>
                     <input type="text" name="modelo"
@@ -284,7 +299,6 @@ export default function DashboardAgente({ usuario }) {
                       placeholder="Ex: Corolla" value={formCarro.modelo} onChange={handleCarroChange} />
                     {errosCarro.modelo && <div className="invalid-feedback">{errosCarro.modelo}</div>}
                   </div>
-
                   <div className="col-md-6">
                     <label className="form-label fw-medium small">Ano <span className="text-danger">*</span></label>
                     <input type="number" name="ano"
@@ -293,7 +307,6 @@ export default function DashboardAgente({ usuario }) {
                       value={formCarro.ano} onChange={handleCarroChange} />
                     {errosCarro.ano && <div className="invalid-feedback">{errosCarro.ano}</div>}
                   </div>
-
                   <div className="col-md-6">
                     <label className="form-label fw-medium small">Placa <span className="text-danger">*</span></label>
                     <input type="text" name="placa"
@@ -301,22 +314,13 @@ export default function DashboardAgente({ usuario }) {
                       placeholder="Ex: ABC-1234" value={formCarro.placa} onChange={handleCarroChange} />
                     {errosCarro.placa && <div className="invalid-feedback">{errosCarro.placa}</div>}
                   </div>
-
-                  <div className="col-12">
-                    <label className="form-label fw-medium small">Diária (R$) <span className="text-danger">*</span></label>
-                    <input type="number" name="diaria"
-                      className={`form-control ${errosCarro.diaria ? 'is-invalid' : ''}`}
-                      placeholder="Ex: 150" min="0" step="0.01"
-                      value={formCarro.diaria} onChange={handleCarroChange} />
-                    {errosCarro.diaria && <div className="invalid-feedback">{errosCarro.diaria}</div>}
-                  </div>
-
                 </div>
+                {erroApiCarro && (
+                  <div className="alert alert-danger py-2 small mt-3 mb-0">{erroApiCarro}</div>
+                )}
               </div>
               <div className="modal-footer border-0 pt-0">
-                <button className="btn btn-outline-secondary btn-sm" onClick={fecharModalCarro}>
-                  Cancelar
-                </button>
+                <button className="btn btn-outline-secondary btn-sm" onClick={fecharModalCarro}>Cancelar</button>
                 <button className="btn btn-primary btn-sm d-flex align-items-center gap-2"
                   onClick={handleSalvarCarro} disabled={salvandoCarro}>
                   {salvandoCarro
