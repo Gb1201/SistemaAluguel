@@ -1,89 +1,73 @@
-import { NavLink, useLocation } from 'react-router-dom'
-import { Users, LayoutDashboard, ChevronRight, Building2, Bell, Settings } from 'lucide-react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Users, LayoutDashboard, ChevronRight, Building2, Bell, Settings, LogOut, Car, ClipboardList } from 'lucide-react'
 import './Layout.css'
 
-// Itens de navegação da sidebar
-const navItems = [
-  { to: '/dashboard', icon: Users, label: 'Clientes' },
-]
+export default function Layout({ children, usuario, onLogout }) {
+  const location = useNavigate()
+  const loc      = useLocation()
 
-export default function Layout({ children }) {
-  const location = useLocation()
+  // Não exibe sidebar/topbar nas rotas públicas
+  const rotasPublicas = ['/login', '/cadastro']
+  const isPublica = rotasPublicas.some(r => loc.pathname.startsWith(r))
 
-  // Resolve o título da página atual para o breadcrumb
+  if (isPublica) return <>{children}</>
+
+  // Itens de nav conforme perfil
+  const navItems = usuario?.tipo === 'agente'
+    ? [{ to: '/agente',  icon: ClipboardList, label: 'Pedidos' }]
+    : [{ to: '/cliente', icon: Car,           label: 'Alugar carro' }]
+
   const paginaAtual = () => {
-    if (location.pathname.startsWith('/cadastro-cliente')) return 'Cadastro de Cliente'
-    if (location.pathname === '/dashboard') return 'Clientes'
+    if (loc.pathname === '/agente')  return 'Painel do Agente'
+    if (loc.pathname === '/cliente') return 'Alugar carro'
     return ''
   }
 
   return (
     <div className="app-shell">
-
-      {/* ── Sidebar ── */}
       <aside className="sidebar">
-        {/* Logo */}
         <div className="sidebar-logo">
-          <div className="logo-icon">
-            <Building2 size={18} />
-          </div>
+          <div className="logo-icon"><Building2 size={18} /></div>
           <span className="logo-text">AlugaFácil</span>
         </div>
 
-        {/* Seção de navegação */}
         <nav className="sidebar-nav">
           <span className="nav-section-label">Menu</span>
           {navItems.map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `nav-item ${isActive ? 'nav-item--active' : ''}`
-              }
-            >
-              <Icon size={16} />
-              <span>{label}</span>
+            <NavLink key={to} to={to}
+              className={({ isActive }) => `nav-item ${isActive ? 'nav-item--active' : ''}`}>
+              <Icon size={16} /><span>{label}</span>
             </NavLink>
           ))}
         </nav>
 
-        {/* Rodapé da sidebar */}
         <div className="sidebar-footer">
           <div className="sidebar-user">
-            <div className="user-avatar">G</div>
+            <div className="user-avatar">{usuario?.nome?.[0] ?? 'U'}</div>
             <div className="user-info">
-              <span className="user-name">Gabriel</span>
-              <span className="user-role">Administrador</span>
+              <span className="user-name">{usuario?.nome ?? 'Usuário'}</span>
+              <span className="user-role">{usuario?.tipo === 'agente' ? 'Agente' : 'Cliente'}</span>
             </div>
           </div>
+          <button className="nav-item w-100 border-0 mt-1" style={{ color: '#e55' }}
+            onClick={onLogout} title="Sair">
+            <LogOut size={15} /><span>Sair</span>
+          </button>
         </div>
       </aside>
 
-      {/* ── Área principal ── */}
       <div className="main-area">
-
-        {/* Topbar */}
         <header className="topbar">
           <div className="breadcrumb">
-            <span className="breadcrumb-root">Sistema</span>
+            <span className="breadcrumb-root">AlugaFácil</span>
             <ChevronRight size={13} className="breadcrumb-sep" />
             <span className="breadcrumb-current">{paginaAtual()}</span>
           </div>
           <div className="topbar-actions">
-            <button className="topbar-btn" title="Notificações">
-              <Bell size={16} />
-            </button>
-            <button className="topbar-btn" title="Configurações">
-              <Settings size={16} />
-            </button>
+            <button className="topbar-btn" title="Notificações"><Bell size={16} /></button>
           </div>
         </header>
-
-        {/* Conteúdo da página */}
-        <main className="page-content">
-          {children}
-        </main>
-
+        <main className="page-content">{children}</main>
       </div>
     </div>
   )

@@ -1,34 +1,59 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, createContext } from 'react'
-import Dashboard from './pages/Dashboard'
-import CadastroCliente from './pages/CadastroCliente'
-import Layout from './components/Layout'
+import { useState } from 'react'
 
-// Dados mockados iniciais
-const clientesIniciais = [
-  { id: 1, nome: 'Ana Souza',      email: 'ana@email.com',      telefone: '(11) 91111-1111', status: 'Ativo'   },
-  { id: 2, nome: 'Carlos Lima',    email: 'carlos@email.com',   telefone: '(21) 92222-2222', status: 'Ativo'   },
-  { id: 3, nome: 'Fernanda Rocha', email: 'fernanda@email.com', telefone: '(31) 93333-3333', status: 'Inativo' },
-]
+import Layout           from './components/Layout'
+import Login            from './pages/Login'
+import CadastroCliente  from './pages/CadastroCliente'
+import DashboardCliente from './pages/DashboardCliente'
+import DashboardAgente  from './pages/DashboardAgente'
 
-export const ClientesContext = createContext()
+// Rota protegida — redireciona para login se não autenticado
+function RotaProtegida({ usuario, tipo, children }) {
+  if (!usuario) return <Navigate to="/login" replace />
+  if (tipo && usuario.tipo !== tipo) return <Navigate to="/login" replace />
+  return children
+}
 
 export default function App() {
-  const [clientes, setClientes] = useState(clientesIniciais)
+  // Estado global do usuário logado (null = não autenticado)
+  const [usuario, setUsuario] = useState(null)
+
+  const handleLogin  = (user) => setUsuario(user)
+  const handleLogout = () => setUsuario(null)
 
   return (
-    <ClientesContext.Provider value={{ clientes, setClientes }}>
-      <BrowserRouter>
-        {/* Layout envolve todas as rotas — sidebar e topbar aparecem em todas as páginas */}
-        <Layout>
-          <Routes>
-            <Route path="/"                       element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard"              element={<Dashboard />} />
-            <Route path="/cadastro-cliente"       element={<CadastroCliente />} />
-            <Route path="/cadastro-cliente/:id"   element={<CadastroCliente />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
-    </ClientesContext.Provider>
+    <BrowserRouter>
+      <Layout usuario={usuario} onLogout={handleLogout}>
+        <Routes>
+          {/* Rotas públicas */}
+          <Route path="/login"    element={<Login onLogin={handleLogin} />} />
+          <Route path="/cadastro" element={<CadastroCliente />} />
+
+          {/* Rota do cliente */}
+          <Route path="/cliente" element={
+            <RotaProtegida usuario={usuario} tipo="cliente">
+              <DashboardCliente usuario={usuario} />
+            </RotaProtegida>
+          } />
+
+          {/* Rota do agente */}
+          <Route path="/agente" element={
+            <RotaProtegida usuario={usuario} tipo="agente">
+              <DashboardAgente usuario={usuario} />
+            </RotaProtegida>
+          } />
+
+          {/* Redireciona raiz conforme perfil */}
+          <Route path="/" element={
+            !usuario          ? <Navigate to="/login"   replace /> :
+            usuario.tipo === 'agente' ? <Navigate to="/agente"  replace /> :
+                                        <Navigate to="/cliente" replace />
+          } />
+
+          {/* Qualquer rota desconhecida → login */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Layout>
+    </BrowserRouter>
   )
 }
