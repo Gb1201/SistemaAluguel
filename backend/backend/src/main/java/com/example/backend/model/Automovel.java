@@ -1,5 +1,7 @@
 package com.example.backend.model;
 
+import com.example.backend.enums.StatusAutomovel;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -17,6 +19,9 @@ public class Automovel {
     @Column(unique = true)
     private String placa;
 
+    @Enumerated(EnumType.STRING)
+    private StatusAutomovel status;
+
    
     public Automovel() {
     }
@@ -27,6 +32,7 @@ public class Automovel {
         this.marca = marca;
         this.modelo = modelo;
         this.placa = placa;
+        this.status = StatusAutomovel.DISPONIVEL; // padrão
     }
 
    
@@ -66,4 +72,21 @@ public class Automovel {
     public void setPlaca(String placa) {
         this.placa = placa;
     }
+
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+
+    public StatusAutomovel getStatus() {
+        return status;
+    }
+
+
+    public void setStatus(StatusAutomovel status) {
+        this.status = status;
+    }
+
+    
 }

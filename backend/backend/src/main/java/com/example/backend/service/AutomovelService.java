@@ -1,5 +1,6 @@
 package com.example.backend.service;
 
+import com.example.backend.enums.StatusAutomovel;
 import com.example.backend.model.Automovel;
 import com.example.backend.repository.AutomovelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,5 +59,9 @@ public class AutomovelService {
             throw new RuntimeException("Automóvel não encontrado com id: " + id);
         }
         automovelRepository.deleteById(id);
+    }
+
+    public List<Automovel> listarDisponiveis() {
+        return automovelRepository.findByStatus(StatusAutomovel.DISPONIVEL);
     }
 }

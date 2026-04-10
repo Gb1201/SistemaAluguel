@@ -62,4 +62,9 @@ public class AutomovelController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/disponiveis")
+    public ResponseEntity<List<Automovel>> listarDisponiveis() {
+        return ResponseEntity.ok(automovelService.listarDisponiveis());
+    }
 }
