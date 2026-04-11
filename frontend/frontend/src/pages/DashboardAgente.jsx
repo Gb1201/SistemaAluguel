@@ -19,15 +19,14 @@ export default function DashboardAgente() {
 
   const [modalCarro, setModalCarro] = useState(false)
   const [formCarro, setFormCarro] = useState(carroVazio)
-  const [errosCarro, setErrosCarro] = useState({})
 
-  // 🔢 calcular dias
+  //  calcular dias
   const calcularDias = (inicio, fim) => {
     const diff = new Date(fim) - new Date(inicio)
     return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)))
   }
 
-  // 🔄 carregar pedidos
+  //  carregar pedidos
   const carregarPedidos = async () => {
     try {
       const res = await fetch(API_PEDIDOS)
@@ -59,7 +58,7 @@ export default function DashboardAgente() {
     }
   }
 
-  // 🚗 carregar carros
+  //  carregar carros
   const carregarAutomoveis = async () => {
     try {
       const res = await fetch(API_AUTOMOVEIS)
@@ -75,7 +74,7 @@ export default function DashboardAgente() {
     carregarAutomoveis()
   }, [])
 
-  // ✅ APROVAR / REPROVAR
+  //  APROVAR / REPROVAR
   const atualizarStatus = async (id, novoStatus) => {
     setProcessando(id)
 
@@ -87,7 +86,6 @@ export default function DashboardAgente() {
 
       if (!response.ok) throw new Error()
 
-      // 🔥 recarrega tudo
       await carregarPedidos()
       await carregarAutomoveis()
 
@@ -98,7 +96,7 @@ export default function DashboardAgente() {
     }
   }
 
-  // 🚗 cadastro carro
+  // cadastro carro
   const handleCarroChange = (e) => {
     const { name, value } = e.target
     setFormCarro(prev => ({ ...prev, [name]: value }))
@@ -135,17 +133,49 @@ export default function DashboardAgente() {
 
       <h4 className="mb-4">Painel do Agente</h4>
 
-      {/* Cards */}
+      {/* Botão cadastrar carro */}
+      <button
+        className="btn btn-primary mb-3"
+        onClick={() => setModalCarro(true)}
+      >
+        <PlusCircle size={16} /> Novo Carro
+      </button>
+
+      {/* CARDS COM LEGENDA */}
       <div className="row mb-4">
-        {[pendentes, aprovados, reprovados, carros.length].map((v, i) => (
-          <div key={i} className="col">
-            <div className="card p-3 text-center">{v}</div>
+
+        <div className="col">
+          <div className="card p-3 text-center">
+            <h6 className="text-warning">Pendentes</h6>
+            <h4>{pendentes}</h4>
           </div>
-        ))}
+        </div>
+
+        <div className="col">
+          <div className="card p-3 text-center">
+            <h6 className="text-success">Aprovados</h6>
+            <h4>{aprovados}</h4>
+          </div>
+        </div>
+
+        <div className="col">
+          <div className="card p-3 text-center">
+            <h6 className="text-danger">Reprovados</h6>
+            <h4>{reprovados}</h4>
+          </div>
+        </div>
+
+        <div className="col">
+          <div className="card p-3 text-center">
+            <h6>Carros</h6>
+            <h4>{carros.length}</h4>
+          </div>
+        </div>
+
       </div>
 
-      {/* Tabela */}
-      <div className="card">
+      {/* Tabela de pedidos */}
+      <div className="card mb-4">
         <div className="card-body">
           <h6>Pedidos</h6>
 
@@ -206,6 +236,104 @@ export default function DashboardAgente() {
           </table>
         </div>
       </div>
+
+      {/* 🚗 TABELA DE CARROS */}
+      <div className="card">
+        <div className="card-body">
+          <h6>Carros Cadastrados</h6>
+
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Ano</th>
+                <th>Placa</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {carros.map(c => (
+                <tr key={c.id}>
+                  <td>{c.marca}</td>
+                  <td>{c.modelo}</td>
+                  <td>{c.ano}</td>
+                  <td>{c.placa}</td>
+                </tr>
+              ))}
+            </tbody>
+
+          </table>
+        </div>
+      </div>
+
+      {/* MODAL CADASTRO CARRO */}
+      {modalCarro && (
+        <div className="modal d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+
+              <div className="modal-header">
+                <h5 className="modal-title">Cadastrar Carro</h5>
+                <button className="btn-close" onClick={() => setModalCarro(false)} />
+              </div>
+
+              <div className="modal-body">
+
+                <input
+                  className="form-control mb-2"
+                  placeholder="Marca"
+                  name="marca"
+                  value={formCarro.marca}
+                  onChange={handleCarroChange}
+                />
+
+                <input
+                  className="form-control mb-2"
+                  placeholder="Modelo"
+                  name="modelo"
+                  value={formCarro.modelo}
+                  onChange={handleCarroChange}
+                />
+
+                <input
+                  className="form-control mb-2"
+                  placeholder="Ano"
+                  name="ano"
+                  value={formCarro.ano}
+                  onChange={handleCarroChange}
+                />
+
+                <input
+                  className="form-control"
+                  placeholder="Placa"
+                  name="placa"
+                  value={formCarro.placa}
+                  onChange={handleCarroChange}
+                />
+
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setModalCarro(false)}
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  className="btn btn-success"
+                  onClick={handleSalvarCarro}
+                >
+                  Salvar
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
