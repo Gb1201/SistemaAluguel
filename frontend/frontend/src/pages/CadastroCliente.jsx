@@ -6,6 +6,8 @@ const API = 'http://localhost:8080/clientes'
 
 const formVazio = {
   nome:      '',
+  email:     '',
+  senha:     '',
   rg:        '',
   cpf:       '',
   endereco:  '',
@@ -14,7 +16,6 @@ const formVazio = {
 
 const rendimentoVazio = { entidadeEmpregadora: '', valor: '' }
 
-// Tela de auto cadastro — o próprio cliente se registra
 export default function CadastroCliente() {
   const navigate = useNavigate()
 
@@ -49,14 +50,20 @@ export default function CadastroCliente() {
 
   const validar = () => {
     const novosErros = {}
-    if (!form.nome.trim()) novosErros.nome = 'Nome é obrigatório.'
-    if (!form.cpf.trim())  novosErros.cpf  = 'CPF é obrigatório.'
+    if (!form.nome.trim())  novosErros.nome  = 'Nome é obrigatório.'
+    if (!form.email.trim()) novosErros.email = 'E-mail é obrigatório.'
+    if (!form.senha.trim()) novosErros.senha = 'Senha é obrigatória.'
+    if (form.senha.length > 0 && form.senha.length < 6)
+      novosErros.senha = 'Senha deve ter pelo menos 6 caracteres.'
+    if (!form.cpf.trim())   novosErros.cpf   = 'CPF é obrigatório.'
+
     rendimentos.forEach((r, i) => {
       const temEntidade = r.entidadeEmpregadora.trim() !== ''
       const temValor    = r.valor !== '' && r.valor !== null
       if (temEntidade && !temValor)  novosErros[`rendimento_valor_${i}`]    = 'Informe o valor.'
       if (!temEntidade && temValor)  novosErros[`rendimento_entidade_${i}`] = 'Informe a entidade.'
     })
+
     setErros(novosErros)
     return Object.keys(novosErros).length === 0
   }
@@ -76,11 +83,11 @@ export default function CadastroCliente() {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ ...form, rendimentos: rendimentosValidos }),
       })
-      if (!response.ok) throw new Error(`Erro ao cadastrar: ${response.status} ${response.statusText}`)
-
-      // Após cadastro, volta para o login
+      if (!response.ok) {
+        const msg = await response.text()
+        throw new Error(msg || `Erro ${response.status}`)
+      }
       navigate('/login')
-
     } catch (err) {
       setErroApi(err.message || 'Não foi possível conectar ao servidor.')
     } finally {
@@ -92,7 +99,6 @@ export default function CadastroCliente() {
     <div className="d-flex justify-content-center py-5 px-3" style={{ background: '#f4f5f9', minHeight: '100vh' }}>
       <div style={{ width: '100%', maxWidth: 640 }}>
 
-        {/* Cabeçalho */}
         <div className="d-flex align-items-center gap-3 mb-4">
           <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
             onClick={() => navigate('/login')} disabled={salvando}>
@@ -105,6 +111,7 @@ export default function CadastroCliente() {
           <div className="card-body p-4">
             <div className="row g-3">
 
+              {/* Nome */}
               <div className="col-12">
                 <label className="form-label fw-medium">Nome completo <span className="text-danger">*</span></label>
                 <input type="text" name="nome"
@@ -113,6 +120,24 @@ export default function CadastroCliente() {
                 {erros.nome && <div className="invalid-feedback">{erros.nome}</div>}
               </div>
 
+              {/* Email e Senha */}
+              <div className="col-md-6">
+                <label className="form-label fw-medium">E-mail <span className="text-danger">*</span></label>
+                <input type="email" name="email"
+                  className={`form-control ${erros.email ? 'is-invalid' : ''}`}
+                  placeholder="seu@email.com" value={form.email} onChange={handleChange} />
+                {erros.email && <div className="invalid-feedback">{erros.email}</div>}
+              </div>
+
+              <div className="col-md-6">
+                <label className="form-label fw-medium">Senha <span className="text-danger">*</span></label>
+                <input type="password" name="senha"
+                  className={`form-control ${erros.senha ? 'is-invalid' : ''}`}
+                  placeholder="Mínimo 6 caracteres" value={form.senha} onChange={handleChange} />
+                {erros.senha && <div className="invalid-feedback">{erros.senha}</div>}
+              </div>
+
+              {/* RG e CPF */}
               <div className="col-md-6">
                 <label className="form-label fw-medium">RG</label>
                 <input type="text" name="rg" className="form-control"
@@ -127,6 +152,7 @@ export default function CadastroCliente() {
                 {erros.cpf && <div className="invalid-feedback">{erros.cpf}</div>}
               </div>
 
+              {/* Endereço */}
               <div className="col-12">
                 <label className="form-label fw-medium">Endereço</label>
                 <input type="text" name="endereco" className="form-control"
@@ -134,6 +160,7 @@ export default function CadastroCliente() {
                   value={form.endereco} onChange={handleChange} />
               </div>
 
+              {/* Profissão */}
               <div className="col-12">
                 <label className="form-label fw-medium">Profissão</label>
                 <input type="text" name="profissao" className="form-control"

@@ -16,7 +16,7 @@ public class AutomovelController {
     @Autowired
     private AutomovelService automovelService;
 
-    // POST /automoveis — cadastra um novo automóvel
+    //cadastra um novo automóvel
     @PostMapping
     public ResponseEntity<?> cadastrar(@RequestBody Automovel automovel) {
         try {
@@ -27,13 +27,13 @@ public class AutomovelController {
         }
     }
 
-    // GET /automoveis — lista todos
+    // lista todos
     @GetMapping
     public ResponseEntity<List<Automovel>> listarTodos() {
         return ResponseEntity.ok(automovelService.listarTodos());
     }
 
-    // GET /automoveis/{id} — busca por id
+    //busca por id
     @GetMapping("/{id}")
     public ResponseEntity<Automovel> buscarPorId(@PathVariable Long id) {
         return automovelService.buscarPorId(id)
@@ -41,7 +41,7 @@ public class AutomovelController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // PUT /automoveis/{id} — atualiza um automóvel
+    //  atualiza um automóvel
     @PutMapping("/{id}")
     public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody Automovel automovel) {
         try {
@@ -52,7 +52,7 @@ public class AutomovelController {
         }
     }
 
-    // DELETE /automoveis/{id} — remove um automóvel
+    // remove um automóvel
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletar(@PathVariable Long id) {
         try {

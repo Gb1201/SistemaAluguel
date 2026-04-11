@@ -25,25 +25,20 @@ export default function Login({ onLogin }) {
     setErro('')
 
     try {
-      // ── Substituir pelo fetch real quando o backend estiver pronto ──
-      // const response = await fetch('http://localhost:8080/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email: form.email, senha: form.senha }),
-      // })
-      // if (!response.ok) throw new Error('Credenciais inválidas.')
-      // const data = await response.json()
-      // onLogin({ tipo: data.tipo, nome: data.nome, id: data.id })
+      const response = await fetch('http://localhost:8080/auth/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email: form.email, senha: form.senha }),
+      })
 
-      // Mock: agente@teste.com → agente | qualquer outro → cliente
-      await new Promise(r => setTimeout(r, 800))
+      if (!response.ok) {
+        const msg = await response.text()
+        throw new Error(msg || 'Email ou senha inválidos.')
+      }
 
-      const usuario = form.email === 'agente@teste.com'
-        ? { tipo: 'agente',  nome: 'Carlos Agente', id: 1 }
-        : { tipo: 'cliente', nome: 'João Cliente',  id: 2 }
-
-      onLogin(usuario)
-      navigate(usuario.tipo === 'agente' ? '/agente' : '/cliente')
+      const data = await response.json()
+      onLogin({ id: data.id, nome: data.nome, email: data.email, tipo: data.tipo })
+      navigate(data.tipo === 'agente' ? '/agente' : '/cliente')
 
     } catch (err) {
       setErro(err.message || 'Não foi possível conectar ao servidor.')
@@ -59,7 +54,6 @@ export default function Login({ onLogin }) {
       <div className="card border-0 shadow-sm" style={{ width: '100%', maxWidth: 420 }}>
         <div className="card-body p-5">
 
-          {/* Logo */}
           <div className="text-center mb-4">
             <div className="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
               style={{ width: 52, height: 52, background: '#4f6ef7' }}>
@@ -98,11 +92,6 @@ export default function Login({ onLogin }) {
             <button className="btn btn-link btn-sm p-0 small" onClick={() => navigate('/cadastro')}>
               Cadastre-se
             </button>
-          </div>
-
-          <div className="mt-4 p-3 rounded-2 small text-muted" style={{ background: '#f8f9fc', border: '1px dashed #dee2e6' }}>
-            <strong>Mock:</strong> use <code>agente@teste.com</code> para entrar como agente,
-            ou qualquer outro e-mail para entrar como cliente.
           </div>
 
         </div>
