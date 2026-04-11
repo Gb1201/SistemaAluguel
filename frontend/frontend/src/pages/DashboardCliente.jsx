@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Car, PlusCircle, ClipboardList, Search } from 'lucide-react'
 
+const API_CARROS = 'http://localhost:8080/automoveis/disponiveis'
+const API_PEDIDOS = 'http://localhost:8080/pedidos'
+
 export default function DashboardCliente({ usuario }) {
   const [carros, setCarros] = useState([])
   const [busca, setBusca] = useState('')
@@ -12,16 +15,62 @@ export default function DashboardCliente({ usuario }) {
   const [erroModal, setErroModal] = useState('')
   const [enviando, setEnviando] = useState(false)
 
-  //  Função para carregar carros disponíveis
-  const carregarCarros = () => {
-    fetch('http://localhost:8080/automoveis/disponiveis')
-      .then(res => res.json())
-      .then(data => setCarros(data))
-      .catch(err => console.error('Erro ao buscar carros:', err))
+  const clienteId = 1 // simulação usuário logado
+
+  // ── Calcular dias ─────────────────────────────
+  const calcularDias = (inicio, fim) => {
+    const diff = new Date(fim) - new Date(inicio)
+    return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+  }
+
+  // ── Buscar carros ─────────────────────────────
+  const carregarCarros = async () => {
+    try {
+      const res = await fetch(API_CARROS)
+      const data = await res.json()
+      setCarros(data)
+    } catch (err) {
+      console.error('Erro ao buscar carros:', err)
+    }
+  }
+
+  // ── Buscar pedidos do cliente ─────────────────
+  const carregarPedidos = async () => {
+    try {
+      const res = await fetch(API_PEDIDOS)
+      const data = await res.json()
+
+      const meusPedidos = data
+        .filter(p => p.cliente?.id === clienteId)
+        .map(p => {
+          const dias = calcularDias(p.dataInicio, p.dataFim)
+
+          return {
+            id: p.id,
+            carro: `${p.automovel?.marca} ${p.automovel?.modelo}`,
+            dataInicio: p.dataInicio,
+            dataFim: p.dataFim,
+            dias,
+            total: dias * 100,
+            status:
+              p.status === 'PENDENTE'
+                ? 'Pendente'
+                : p.status === 'APROVADO'
+                ? 'Aprovado'
+                : 'Cancelado'
+          }
+        })
+
+      setPedidos(meusPedidos)
+
+    } catch (err) {
+      console.error('Erro ao buscar pedidos:', err)
+    }
   }
 
   useEffect(() => {
     carregarCarros()
+    carregarPedidos()
   }, [])
 
   const carrosFiltrados = carros.filter(c =>
@@ -41,12 +90,7 @@ export default function DashboardCliente({ usuario }) {
     setCarroSelecionado(null)
   }
 
-  const calcularDias = () => {
-    if (!dataInicio || !dataFim) return 0
-    const diff = new Date(dataFim) - new Date(dataInicio)
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
-  }
-
+  // ── Criar pedido ─────────────────────────────
   const handleSolicitarAluguel = async () => {
     if (!dataInicio || !dataFim) {
       setErroModal('Informe as datas.')
@@ -62,17 +106,7 @@ export default function DashboardCliente({ usuario }) {
     setErroModal('')
 
     try {
-      // simula usuario logado com id 1 do banco de dados que no caso seria joao guilherme
-      const clienteId = 1
-
-      console.log("Enviando pedido:", {
-        clienteId,
-        automovelId: carroSelecionado.id,
-        dataInicio,
-        dataFim
-      })
-
-      const response = await fetch('http://localhost:8080/pedidos', {
+      const response = await fetch(API_PEDIDOS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -83,172 +117,169 @@ export default function DashboardCliente({ usuario }) {
         })
       })
 
-      if (!response.ok) {
-        throw new Error('Erro ao criar pedido')
-      }
+      if (!response.ok) throw new Error()
 
-      const novoPedido = {
-        id: pedidos.length + 1,
-        carro: `${carroSelecionado.marca} ${carroSelecionado.modelo}`,
-        dataInicio,
-        dataFim,
-        dias: calcularDias(),
-        total: 0,
-        status: 'Pendente',
-      }
-
-      setPedidos(prev => [novoPedido, ...prev])
-
-      // Atualiza carros disponíveis
-      carregarCarros()
+      // 🔥 Atualiza tudo corretamente
+      await carregarPedidos()
+      await carregarCarros()
 
       fecharModal()
 
     } catch (err) {
       console.error(err)
-      setErroModal('Erro ao enviar pedido. Verifique o servidor.')
+      setErroModal('Erro ao enviar pedido.')
     } finally {
       setEnviando(false)
     }
   }
 
+  const BADGE = {
+    Pendente: 'text-bg-warning',
+    Aprovado: 'text-bg-success',
+    Cancelado: 'text-bg-danger'
+  }
+
   return (
     <div className="container py-4">
 
+      {/* Cabeçalho */}
       <div className="mb-4">
         <h4 className="fw-semibold mb-0">
           Olá, {usuario?.nome?.split(' ')[0] || 'Cliente'} 👋
         </h4>
         <p className="text-muted small mb-0">
-          Escolha um carro e solicite seu aluguel
+          Escolha um carro e acompanhe seus pedidos
         </p>
       </div>
 
+      {/* ── CARROS ───────────────────────────── */}
       <div className="card border-0 shadow-sm mb-4">
         <div className="card-body">
-          <div className="d-flex align-items-center justify-content-between mb-3">
-            <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2">
-              <Car size={16} className="text-primary" /> Carros disponíveis
+
+          <div className="d-flex justify-content-between mb-3">
+            <h6 className="fw-semibold d-flex align-items-center gap-2">
+              <Car size={16} /> Carros disponíveis
             </h6>
 
-            <div className="input-group" style={{ maxWidth: 260 }}>
-              <span className="input-group-text bg-white border-end-0">
-                <Search size={14} className="text-muted" />
-              </span>
-              <input
-                type="text"
-                className="form-control border-start-0 ps-0 form-control-sm"
-                placeholder="Buscar marca ou modelo..."
-                value={busca}
-                onChange={e => setBusca(e.target.value)}
-              />
-            </div>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              style={{ maxWidth: 250 }}
+              placeholder="Buscar..."
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+            />
           </div>
 
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
-                <tr>
-                  <th>Marca</th>
-                  <th>Modelo</th>
-                  <th>Ano</th>
-                  <th>Placa</th>
-                  <th style={{ width: 130 }}>Ação</th>
+          <table className="table table-hover">
+            <thead>
+              <tr>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Ano</th>
+                <th></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {carrosFiltrados.map(c => (
+                <tr key={c.id}>
+                  <td>{c.marca}</td>
+                  <td>{c.modelo}</td>
+                  <td>{c.ano}</td>
+                  <td>
+                    <button
+                      className="btn btn-sm btn-primary"
+                      onClick={() => abrirModal(c)}
+                    >
+                      <PlusCircle size={13} /> Solicitar
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {carrosFiltrados.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center text-muted py-4">
-                      Nenhum carro encontrado.
-                    </td>
-                  </tr>
-                ) : carrosFiltrados.map(carro => (
-                  <tr key={carro.id}>
-                    <td className="fw-medium">{carro.marca}</td>
-                    <td>{carro.modelo}</td>
-                    <td className="text-muted">{carro.ano}</td>
-                    <td className="text-muted small">{carro.placa}</td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-primary d-flex align-items-center gap-1"
-                        onClick={() => abrirModal(carro)}
-                      >
-                        <PlusCircle size={13} /> Solicitar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
+
         </div>
       </div>
 
-      {/* Modal */}
+      {/* ── MEUS PEDIDOS ─────────────────────── */}
+      <div className="card border-0 shadow-sm">
+        <div className="card-body">
+
+          <h6 className="fw-semibold mb-3 d-flex align-items-center gap-2">
+            <ClipboardList size={16} /> Meus pedidos
+          </h6>
+
+          <table className="table table-hover">
+            <thead>
+              <tr>
+                <th>Carro</th>
+                <th>Período</th>
+                <th>Dias</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {pedidos.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="text-center text-muted">
+                    Nenhum pedido encontrado.
+                  </td>
+                </tr>
+              ) : pedidos.map(p => (
+                <tr key={p.id}>
+                  <td>{p.carro}</td>
+                  <td>{p.dataInicio} → {p.dataFim}</td>
+                  <td>{p.dias}</td>
+                  <td>
+                    <span className={`badge ${BADGE[p.status]}`}>
+                      {p.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+
+          </table>
+
+        </div>
+      </div>
+
+      {/* ── MODAL ───────────────────────────── */}
       {modalAberto && (
         <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.45)' }}>
           <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow">
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-semibold">Solicitar aluguel</h5>
+            <div className="modal-content">
+
+              <div className="modal-header">
+                <h5>Solicitar aluguel</h5>
                 <button className="btn-close" onClick={fecharModal} />
               </div>
 
               <div className="modal-body">
-                <p className="text-muted small mb-3">
-                  <strong>
-                    {carroSelecionado?.marca} {carroSelecionado?.modelo}
-                  </strong>
-                </p>
+                <input type="date" className="form-control mb-2"
+                  value={dataInicio}
+                  onChange={e => setDataInicio(e.target.value)} />
 
-                <div className="row g-3">
-                  <div className="col-6">
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={dataInicio}
-                      onChange={e => setDataInicio(e.target.value)}
-                    />
-                  </div>
+                <input type="date" className="form-control"
+                  value={dataFim}
+                  onChange={e => setDataFim(e.target.value)} />
 
-                  <div className="col-6">
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={dataFim}
-                      onChange={e => setDataFim(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {erroModal && (
-                  <div className="alert alert-danger py-2 small mt-3 mb-0">
-                    {erroModal}
-                  </div>
-                )}
+                {erroModal && <div className="text-danger mt-2">{erroModal}</div>}
               </div>
 
-              <div className="modal-footer border-0 pt-0">
-                <button
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={fecharModal}
-                >
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={fecharModal}>
                   Cancelar
                 </button>
 
-                <button
-                  className="btn btn-primary btn-sm d-flex align-items-center gap-1"
-                  onClick={handleSolicitarAluguel}
-                  disabled={enviando}
-                >
-                  {enviando
-                    ? <span className="spinner-border spinner-border-sm" />
-                    : <PlusCircle size={13} />
-                  }
-                  {enviando ? 'Enviando...' : 'Confirmar pedido'}
+                <button className="btn btn-primary" onClick={handleSolicitarAluguel}>
+                  {enviando ? 'Enviando...' : 'Confirmar'}
                 </button>
               </div>
+
             </div>
           </div>
         </div>
