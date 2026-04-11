@@ -99,7 +99,7 @@ export default function DashboardCliente({ usuario }) {
 
       setPedidos(prev => [novoPedido, ...prev])
 
-      // 🔄 Atualiza carros disponíveis
+      // Atualiza carros disponíveis
       carregarCarros()
 
       fecharModal()

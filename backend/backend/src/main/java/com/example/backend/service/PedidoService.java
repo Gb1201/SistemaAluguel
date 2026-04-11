@@ -57,4 +57,25 @@ public class PedidoService {
     public List<Pedido> listarPorCliente(Long clienteId) {
         return pedidoRepository.findByClienteId(clienteId);
     }
+
+    public Pedido atualizarStatus(Long pedidoId, StatusPedido novoStatus) {
+
+        Pedido pedido = pedidoRepository.findById(pedidoId)
+                .orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
+
+        if (pedido.getStatus() != StatusPedido.PENDENTE) {
+            throw new RuntimeException("Pedido já foi processado");
+        }
+
+        pedido.setStatus(novoStatus);
+
+        // REGRA IMPORTANTE
+        if (novoStatus == StatusPedido.CANCELADO) {
+            Automovel automovel = pedido.getAutomovel();
+            automovel.setStatus(StatusAutomovel.DISPONIVEL);
+            automovelRepository.save(automovel);
+        }
+
+        return pedidoRepository.save(pedido);
+    }
 }

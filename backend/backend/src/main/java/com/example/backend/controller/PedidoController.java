@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import com.example.backend.dtos.PedidoDTO;
+import com.example.backend.enums.StatusPedido;
 import com.example.backend.model.Pedido;
 import com.example.backend.service.PedidoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,5 +37,14 @@ public class PedidoController {
     @GetMapping("/cliente/{clienteId}")
     public ResponseEntity<List<Pedido>> listarPorCliente(@PathVariable Long clienteId) {
         return ResponseEntity.ok(pedidoService.listarPorCliente(clienteId));
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Pedido> atualizarStatus(
+            @PathVariable Long id,
+            @RequestParam StatusPedido status) {
+
+        Pedido pedidoAtualizado = pedidoService.atualizarStatus(id, status);
+        return ResponseEntity.ok(pedidoAtualizado);
     }
 }
