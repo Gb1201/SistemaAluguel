@@ -15,11 +15,25 @@ function RotaProtegida({ usuario, tipo, children }) {
 }
 
 export default function App() {
-  // Estado global do usuário logado (null = não autenticado)
-  const [usuario, setUsuario] = useState(null)
+  // Inicializa lendo do localStorage — persiste ao recarregar a página
+  const [usuario, setUsuario] = useState(() => {
+    try {
+      const salvo = localStorage.getItem('usuario')
+      return salvo ? JSON.parse(salvo) : null
+    } catch {
+      return null
+    }
+  })
 
-  const handleLogin  = (user) => setUsuario(user)
-  const handleLogout = () => setUsuario(null)
+  const handleLogin = (user) => {
+    localStorage.setItem('usuario', JSON.stringify(user))
+    setUsuario(user)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('usuario')
+    setUsuario(null)
+  }
 
   return (
     <BrowserRouter>
@@ -45,7 +59,7 @@ export default function App() {
 
           {/* Redireciona raiz conforme perfil */}
           <Route path="/" element={
-            !usuario          ? <Navigate to="/login"   replace /> :
+            !usuario                  ? <Navigate to="/login"   replace /> :
             usuario.tipo === 'agente' ? <Navigate to="/agente"  replace /> :
                                         <Navigate to="/cliente" replace />
           } />
