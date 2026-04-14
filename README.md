@@ -49,8 +49,11 @@ sistema-aluguel-carros/
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/
-│   │   │   │   └── com/aluguelcarros/
+│   │   │   │   └── com/backend/
+│   │   │   │       ├── config/
 │   │   │   │       ├── controller/
+│   │   │   │       ├── dtos/
+│   │   │   │       ├── enums/
 │   │   │   │       ├── model/
 │   │   │   │       ├── repository/
 │   │   │   │       └── service/
@@ -61,8 +64,11 @@ sistema-aluguel-carros/
 │   ├── src/
 │   │   ├── components/
 │   │   ├── pages/
-│   │   ├── services/
+│   │   └── App.css
 │   │   └── App.js
+│   │   └── index.css
+│   │   └── main.jsx
+│   │   └── App.js  
 │   └── package.json
 └── README.md
 ```
@@ -85,8 +91,7 @@ Antes de iniciar, certifique-se de ter instalado em sua máquina:
 ### 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/seu-usuario/sistema-aluguel-carros.git
-cd sistema-aluguel-carros
+git clone https://github.com/Gb1201/SistemaAluguel.git
 ```
 
 ### 2. Configurar o banco de dados
@@ -94,7 +99,7 @@ cd sistema-aluguel-carros
 Crie um banco de dados PostgreSQL:
 
 ```sql
-CREATE DATABASE aluguel_carros;
+CREATE DATABASE aluguelCarros;
 ```
 
 Edite o arquivo `backend/src/main/resources/application.properties`:
@@ -109,7 +114,6 @@ spring.jpa.hibernate.ddl-auto=update
 ### 3. Executar o Backend
 
 ```bash
-cd backend
 mvn spring-boot:run
 ```
 
@@ -119,8 +123,9 @@ mvn spring-boot:run
 
 ```bash
 cd frontend
+cd front end
 npm install
-npm start
+npm run dev
 ```
 
 > A aplicação estará disponível em: `http://localhost:3000`
