@@ -18,14 +18,13 @@ Sistema web para apoio à gestão de aluguéis de automóveis, permitindo efetua
 | Pedro Marçal Ballesteros | [@pedroBallesteros](https://github.com/Netroxx) |
 | Vinicius Paranho Ribeiro | [@viniciusRibeiro](https://github.com) |
 
-
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
 ### Backend
 ![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
+![Micronaut](https://img.shields.io/badge/Micronaut-2C2C2C?style=for-the-badge&logo=micronaut&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 
 ### Frontend
@@ -37,10 +36,13 @@ Sistema web para apoio à gestão de aluguéis de automóveis, permitindo efetua
 
 ## 🏗️ Arquitetura
 
-O sistema segue a arquitetura **MVC (Model-View-Controller)** e está dividido em dois subsistemas:
+O sistema segue uma arquitetura em camadas inspirada no padrão **MVC (Model-View-Controller)**, utilizando o framework Micronaut no backend.
+
+O sistema está dividido em dois subsistemas:
 
 - **Subsistema de Gestão de Pedidos e Contratos** — responsável pela lógica de negócio relacionada aos aluguéis, clientes, agentes e contratos.
 - **Subsistema de Interface Web** — responsável pela construção dinâmica das páginas e experiência do usuário.
+
 
 ```
 sistema-aluguel-carros/
@@ -57,7 +59,7 @@ sistema-aluguel-carros/
 │   │   │   │       ├── repository/
 │   │   │   │       └── service/
 │   │   │   └── resources/
-│   │   │       └── application.properties
+│   │   │       └── application.yml
 │   └── pom.xml
 ├── frontend/                 # React + Bootstrap
 │   ├── src/
@@ -74,14 +76,15 @@ sistema-aluguel-carros/
 
 ---
 
+
 ## ⚙️ Pré-requisitos
 
 Antes de iniciar, certifique-se de ter instalado em sua máquina:
 
-- [Java 17+](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
-- [Maven 3.8+](https://maven.apache.org/download.cgi)
-- [Node.js 18+](https://nodejs.org/)
-- [PostgreSQL 15+](https://www.postgresql.org/download/)
+- Java 17+
+- Gradle (ou Maven, dependendo da configuração)
+- Node.js 18+
+- PostgreSQL 15+
 
 ---
 
@@ -101,19 +104,27 @@ Crie um banco de dados PostgreSQL:
 CREATE DATABASE aluguelCarros;
 ```
 
-Edite o arquivo `backend/src/main/resources/application.properties`:
+Edite o arquivo `backend/src/main/resources/application.yml`:
 
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/aluguelCarros
-spring.datasource.username=seu_usuario
-spring.datasource.password=sua_senha
-spring.jpa.hibernate.ddl-auto=update
+```yml
+datasources:
+  default:
+    url: jdbc:postgresql://localhost:5432/aluguelCarros
+    username: seu_usuario
+    password: sua_senha
+
+jpa:
+  default:
+    properties:
+      hibernate:
+        hbm2ddl:
+          auto: update
 ```
 
 ### 3. Executar o Backend
 
 ```bash
-mvn spring-boot:run
+./gradlew run
 ```
 
 > A API estará disponível em: `http://localhost:8080`
