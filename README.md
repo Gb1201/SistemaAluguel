@@ -46,7 +46,7 @@ O sistema está dividido em dois subsistemas:
 
 ```
 sistema-aluguel-carros/
-├── backend/                  # Spring Boot (API REST)
+├── backend/                  # MIcronaut (API REST)
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/
