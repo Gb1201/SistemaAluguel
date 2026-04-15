@@ -14,11 +14,10 @@ Sistema web para apoio à gestão de aluguéis de automóveis, permitindo efetua
 
 | Nome | GitHub |
 |------|--------|
-| Gabriel dos Santos Silva Coelho | [@gabriel](https://github.com) |
-| Pedro Marçal Ballesteros | [@pedro](https://github.com) |
-| Vinicius Paranho Ribeiro | [@vinicius](https://github.com) |
+| Gabriel dos Santos Silva Coelho | [@gabrielSantos](https://github.com/Gb1201) |
+| Pedro Marçal Ballesteros | [@pedroBallesteros](https://github.com/Netroxx) |
+| Vinicius Paranho Ribeiro | [@viniciusRibeiro](https://github.com) |
 
-> ⚠️ Substitua os links pelos perfis reais do GitHub de cada integrante.
 
 ---
 
@@ -105,7 +104,7 @@ CREATE DATABASE aluguelCarros;
 Edite o arquivo `backend/src/main/resources/application.properties`:
 
 ```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/aluguel_carros
+spring.datasource.url=jdbc:postgresql://localhost:5432/aluguelCarros
 spring.datasource.username=seu_usuario
 spring.datasource.password=sua_senha
 spring.jpa.hibernate.ddl-auto=update
@@ -128,7 +127,7 @@ npm install
 npm run dev
 ```
 
-> A aplicação estará disponível em: `http://localhost:3000`
+> A aplicação estará disponível em: `http://localhost:5173`
 
 ---
 
@@ -137,25 +136,19 @@ npm run dev
 ### Cliente (Usuário Individual)
 - [x] Cadastro e autenticação no sistema
 - [x] Introduzir pedido de aluguel
-- [x] Modificar pedido de aluguel
 - [x] Consultar status de pedido
 - [x] Cancelar pedido de aluguel
 
 ### Agente (Empresa / Banco)
-- [x] Modificar pedidos
 - [x] Avaliar pedidos do ponto de vista financeiro
 - [x] Aprovar ou reprovar pedidos para execução de contrato
-
-### Geral
 - [x] Registro de automóveis (matrícula, ano, marca, modelo e placa)
-- [x] Gerenciamento de contratos de crédito
-- [x] Associação de aluguel com contrato de crédito bancário
 
 ---
 
 ## 📐 Modelagem UML
 
-Os diagramas UML do projeto estão disponíveis na pasta `/docs/uml/`:
+Os diagramas UML do projeto estão disponíveis na pasta `/docs`:
 
 | Diagrama | Sprint |
 |----------|--------|
