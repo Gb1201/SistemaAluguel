@@ -1,13 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useState } from 'react'
 
-import Layout           from './components/Layout'
-import Login            from './pages/Login'
-import CadastroCliente  from './pages/CadastroCliente'
+import Layout from './components/Layout'
+import Home from './pages/Home'
+import Login from './pages/Login'
+import CadastroCliente from './pages/CadastroCliente'
 import DashboardCliente from './pages/DashboardCliente'
-import DashboardAgente  from './pages/DashboardAgente'
+import DashboardAgente from './pages/DashboardAgente'
 
-// Rota protegida — redireciona para login se não autenticado
 function RotaProtegida({ usuario, tipo, children }) {
   if (!usuario) return <Navigate to="/login" replace />
   if (tipo && usuario.tipo !== tipo) return <Navigate to="/login" replace />
@@ -15,14 +15,11 @@ function RotaProtegida({ usuario, tipo, children }) {
 }
 
 export default function App() {
-  // Inicializa lendo do localStorage — persiste ao recarregar a página
   const [usuario, setUsuario] = useState(() => {
     try {
       const salvo = localStorage.getItem('usuario')
       return salvo ? JSON.parse(salvo) : null
-    } catch {
-      return null
-    }
+    } catch { return null }
   })
 
   const handleLogin = (user) => {
@@ -37,37 +34,34 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Layout usuario={usuario} onLogout={handleLogout}>
-        <Routes>
-          {/* Rotas públicas */}
-          <Route path="/login"    element={<Login onLogin={handleLogin} />} />
-          <Route path="/cadastro" element={<CadastroCliente />} />
+      <Routes>
 
-          {/* Rota do cliente */}
+        {/* PÚBLICAS (SEM SIDEBAR) */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+        <Route path="/cadastro" element={<CadastroCliente />} />
+
+        {/* PRIVADAS (COM SIDEBAR) */}
+        <Route element={<Layout usuario={usuario} onLogout={handleLogout} />}>
+
           <Route path="/cliente" element={
             <RotaProtegida usuario={usuario} tipo="cliente">
               <DashboardCliente usuario={usuario} />
             </RotaProtegida>
           } />
 
-          {/* Rota do agente */}
           <Route path="/agente" element={
             <RotaProtegida usuario={usuario} tipo="agente">
               <DashboardAgente usuario={usuario} />
             </RotaProtegida>
           } />
 
-          {/* Redireciona raiz conforme perfil */}
-          <Route path="/" element={
-            !usuario                  ? <Navigate to="/login"   replace /> :
-            usuario.tipo === 'agente' ? <Navigate to="/agente"  replace /> :
-                                        <Navigate to="/cliente" replace />
-          } />
+        </Route>
 
-          {/* Qualquer rota desconhecida → login */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Layout>
+        {/* fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+
+      </Routes>
     </BrowserRouter>
   )
 }

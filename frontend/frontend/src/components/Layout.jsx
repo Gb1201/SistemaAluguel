@@ -1,24 +1,16 @@
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Users, LayoutDashboard, ChevronRight, Building2, Bell, Settings, LogOut, Car, ClipboardList } from 'lucide-react'
+import { NavLink, useLocation, Outlet } from 'react-router-dom'
+import { ChevronRight, Building2, Bell, LogOut, Car, ClipboardList } from 'lucide-react'
 import './Layout.css'
 
-export default function Layout({ children, usuario, onLogout }) {
-  const location = useNavigate()
-  const loc      = useLocation()
+export default function Layout({ usuario, onLogout }) {
+  const loc = useLocation()
 
-  // Não exibe sidebar/topbar nas rotas públicas
-  const rotasPublicas = ['/login', '/cadastro']
-  const isPublica = rotasPublicas.some(r => loc.pathname.startsWith(r))
-
-  if (isPublica) return <>{children}</>
-
-  // Itens de nav conforme perfil
   const navItems = usuario?.tipo === 'agente'
-    ? [{ to: '/agente',  icon: ClipboardList, label: 'Pedidos' }]
-    : [{ to: '/cliente', icon: Car,           label: 'Alugar carro' }]
+    ? [{ to: '/agente', icon: ClipboardList, label: 'Pedidos' }]
+    : [{ to: '/cliente', icon: Car, label: 'Alugar carro' }]
 
   const paginaAtual = () => {
-    if (loc.pathname === '/agente')  return 'Painel do Agente'
+    if (loc.pathname === '/agente') return 'Painel do Agente'
     if (loc.pathname === '/cliente') return 'Alugar carro'
     return ''
   }
@@ -49,8 +41,10 @@ export default function Layout({ children, usuario, onLogout }) {
               <span className="user-role">{usuario?.tipo === 'agente' ? 'Agente' : 'Cliente'}</span>
             </div>
           </div>
-          <button className="nav-item w-100 border-0 mt-1" style={{ color: '#e55' }}
-            onClick={onLogout} title="Sair">
+
+          <button className="nav-item w-100 border-0 mt-1"
+            style={{ color: '#e55' }}
+            onClick={onLogout}>
             <LogOut size={15} /><span>Sair</span>
           </button>
         </div>
@@ -59,15 +53,20 @@ export default function Layout({ children, usuario, onLogout }) {
       <div className="main-area">
         <header className="topbar">
           <div className="breadcrumb">
-            <span className="breadcrumb-root">AlugaFácil</span>
-            <ChevronRight size={13} className="breadcrumb-sep" />
-            <span className="breadcrumb-current">{paginaAtual()}</span>
+            <span>AlugaFácil</span>
+            <ChevronRight size={13} />
+            <span>{paginaAtual()}</span>
           </div>
-          <div className="topbar-actions">
-            <button className="topbar-btn" title="Notificações"><Bell size={16} /></button>
-          </div>
+
+          <button className="topbar-btn">
+            <Bell size={16} />
+          </button>
         </header>
-        <main className="page-content">{children}</main>
+
+        {/* atualização */}
+        <main className="page-content">
+          <Outlet />
+        </main>
       </div>
     </div>
   )
