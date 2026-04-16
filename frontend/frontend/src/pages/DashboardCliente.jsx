@@ -1,14 +1,24 @@
 import { useState, useEffect } from 'react'
-import { Car, PlusCircle, ClipboardList, Search, CalendarDays, Clock } from 'lucide-react'
+import { Car, PlusCircle, ClipboardList, Search, CalendarDays, Clock, Fuel, Gauge } from 'lucide-react'
 
 const API_CARROS  = 'http://localhost:8080/automoveis/disponiveis'
 const API_PEDIDOS = 'http://localhost:8080/pedidos'
 
 const STATUS_CONFIG = {
-  Pendente:  { badge: 'badge-pendente',  label: 'Pendente'  },
-  Aprovado:  { badge: 'badge-aprovado',  label: 'Aprovado'  },
-  Cancelado: { badge: 'badge-cancelado', label: 'Cancelado' },
+  Pendente:  { bg: '#fffbeb', color: '#d97706', dot: '#f59e0b', label: 'Pendente'  },
+  Aprovado:  { bg: '#f0fdf4', color: '#16a34a', dot: '#22c55e', label: 'Aprovado'  },
+  Cancelado: { bg: '#fff1f2', color: '#e11d48', dot: '#f43f5e', label: 'Cancelado' },
 }
+
+// Cores para cada card de carro (cicla entre elas)
+const CAR_PALETTES = [
+  { from: '#1e3a5f', to: '#2d6a9f', accent: '#60a5fa' },
+  { from: '#1a1a2e', to: '#16213e', accent: '#818cf8' },
+  { from: '#0f3460', to: '#533483', accent: '#a78bfa' },
+  { from: '#1b2838', to: '#2a475e', accent: '#38bdf8' },
+  { from: '#0d2137', to: '#1a3a5c', accent: '#34d399' },
+  { from: '#1e1e2e', to: '#313244', accent: '#f5c2e7' },
+]
 
 export default function DashboardCliente({ usuario }) {
   const [carros, setCarros]                     = useState([])
@@ -20,6 +30,7 @@ export default function DashboardCliente({ usuario }) {
   const [dataFim, setDataFim]                   = useState('')
   const [erroModal, setErroModal]               = useState('')
   const [enviando, setEnviando]                 = useState(false)
+  const [paletteIdx, setPaletteIdx]             = useState({})
 
   const clienteId = usuario?.id
 
@@ -33,14 +44,18 @@ export default function DashboardCliente({ usuario }) {
       const res  = await fetch(API_CARROS)
       const data = await res.json()
       setCarros(data)
-    } catch (err) { console.error('Erro ao buscar carros:', err) }
+      // Atribui paleta fixa para cada carro
+      const idx = {}
+      data.forEach((c, i) => { idx[c.id] = i % CAR_PALETTES.length })
+      setPaletteIdx(idx)
+    } catch (err) { console.error(err) }
   }
 
   const carregarPedidos = async () => {
     try {
       const res  = await fetch(API_PEDIDOS)
       const data = await res.json()
-      const meusPedidos = data
+      setPedidos(data
         .filter(p => p.cliente?.id === clienteId)
         .map(p => ({
           id:         p.id,
@@ -48,12 +63,10 @@ export default function DashboardCliente({ usuario }) {
           dataInicio: p.dataInicio,
           dataFim:    p.dataFim,
           dias:       calcularDias(p.dataInicio, p.dataFim),
-          status:
-            p.status === 'PENDENTE' ? 'Pendente' :
-            p.status === 'APROVADO' ? 'Aprovado' : 'Cancelado',
+          status: p.status === 'PENDENTE' ? 'Pendente' : p.status === 'APROVADO' ? 'Aprovado' : 'Cancelado',
         }))
-      setPedidos(meusPedidos)
-    } catch (err) { console.error('Erro ao buscar pedidos:', err) }
+      )
+    } catch (err) { console.error(err) }
   }
 
   useEffect(() => {
@@ -74,17 +87,15 @@ export default function DashboardCliente({ usuario }) {
 
   const handleSolicitarAluguel = async () => {
     if (!dataInicio || !dataFim) { setErroModal('Informe as datas.'); return }
-    if (new Date(dataFim) <= new Date(dataInicio)) {
-      setErroModal('Data de devolução deve ser após a retirada.'); return
-    }
+    if (new Date(dataFim) <= new Date(dataInicio)) { setErroModal('Data de devolução deve ser após a retirada.'); return }
     setEnviando(true); setErroModal('')
     try {
-      const response = await fetch(API_PEDIDOS, {
+      const res = await fetch(API_PEDIDOS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clienteId, automovelId: carroSelecionado.id, dataInicio, dataFim }),
       })
-      if (!response.ok) throw new Error()
+      if (!res.ok) throw new Error()
       await carregarPedidos(); await carregarCarros(); fecharModal()
     } catch { setErroModal('Erro ao enviar pedido.') }
     finally { setEnviando(false) }
@@ -100,295 +111,407 @@ export default function DashboardCliente({ usuario }) {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+        .dc-wrap { font-family: 'DM Sans', sans-serif; }
+
+        /* ── Hero ── */
         .dc-hero {
-          background: linear-gradient(135deg, #1e2540 0%, #0f1117 100%);
-          border-radius: 16px;
-          padding: 28px 32px;
-          margin-bottom: 24px;
+          background: linear-gradient(135deg, #0f1117 0%, #1e2540 60%, #162048 100%);
+          border-radius: 20px;
+          padding: 32px 36px;
+          margin-bottom: 28px;
           position: relative;
           overflow: hidden;
         }
-        .dc-hero::before {
-          content: '';
-          position: absolute;
-          top: -40px; right: -40px;
+        .dc-hero-glow1 {
+          position: absolute; top: -60px; right: -20px;
+          width: 260px; height: 260px;
+          background: radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%);
+          pointer-events: none;
+        }
+        .dc-hero-glow2 {
+          position: absolute; bottom: -80px; right: 140px;
           width: 200px; height: 200px;
-          background: radial-gradient(circle, rgba(79,110,247,0.3) 0%, transparent 70%);
-          border-radius: 50%;
+          background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%);
+          pointer-events: none;
         }
-        .dc-hero::after {
-          content: '';
-          position: absolute;
-          bottom: -60px; right: 80px;
-          width: 160px; height: 160px;
-          background: radial-gradient(circle, rgba(108,142,247,0.15) 0%, transparent 70%);
-          border-radius: 50%;
+        .dc-hero-glow3 {
+          position: absolute; top: 10px; left: 40%;
+          width: 120px; height: 120px;
+          background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+          pointer-events: none;
         }
-        .dc-hero-title {
-          font-size: 22px;
-          font-weight: 600;
-          color: #fff;
-          margin: 0 0 4px;
+        .dc-hero-tag {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: rgba(99,102,241,0.2);
+          border: 1px solid rgba(99,102,241,0.35);
+          color: #a5b4fc; font-size: 11px; font-weight: 500;
+          padding: 3px 10px; border-radius: 20px; margin-bottom: 10px;
+          letter-spacing: 0.3px;
         }
-        .dc-hero-sub {
-          font-size: 13px;
-          color: #8b92a8;
-          margin: 0;
-        }
-        .dc-stats {
-          display: flex;
-          gap: 12px;
-          margin-top: 20px;
-        }
+        .dc-hero-saudacao { font-size: 13px; color: #94a3b8; margin: 0; }
+        .dc-hero-nome { font-size: 26px; font-weight: 700; color: #fff; margin: 2px 0 20px; letter-spacing: -0.5px; }
+        .dc-hero-stats { display: flex; gap: 12px; flex-wrap: wrap; }
         .dc-stat {
-          background: rgba(255,255,255,0.06);
+          background: rgba(255,255,255,0.05);
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 10px;
-          padding: 10px 16px;
-          min-width: 90px;
-        }
-        .dc-stat-val {
-          font-size: 20px;
-          font-weight: 600;
-          color: #fff;
-          line-height: 1;
-        }
-        .dc-stat-label {
-          font-size: 11px;
-          color: #8b92a8;
-          margin-top: 3px;
-        }
-        .dc-section-title {
-          font-size: 14px;
-          font-weight: 600;
-          color: #1a1d2e;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 16px;
-        }
-        .dc-section-title svg { color: #4f6ef7; }
-        .car-card {
-          border: 1px solid #e8eaf0;
           border-radius: 12px;
-          padding: 16px;
+          padding: 12px 18px;
+          min-width: 100px;
+          backdrop-filter: blur(4px);
+        }
+        .dc-stat-val { font-size: 22px; font-weight: 700; color: #fff; line-height: 1; }
+        .dc-stat-label { font-size: 11px; color: #64748b; margin-top: 4px; letter-spacing: 0.3px; }
+
+        /* ── Section header ── */
+        .dc-sh {
+          display: flex; align-items: center; justify-content: space-between;
+          margin-bottom: 20px;
+        }
+        .dc-sh-left { display: flex; align-items: center; gap: 8px; }
+        .dc-sh-icon {
+          width: 32px; height: 32px; border-radius: 8px;
+          background: linear-gradient(135deg, #4f46e5, #6366f1);
+          display: flex; align-items: center; justify-content: center;
+        }
+        .dc-sh-title { font-size: 15px; font-weight: 600; color: #0f172a; }
+        .dc-sh-count {
+          font-size: 11px; font-weight: 600; color: #6366f1;
+          background: #eef2ff; border-radius: 20px; padding: 2px 8px;
+        }
+
+        /* ── Search ── */
+        .dc-search {
+          position: relative;
+        }
+        .dc-search svg {
+          position: absolute; left: 10px; top: 50%;
+          transform: translateY(-50%); color: #94a3b8; pointer-events: none;
+        }
+        .dc-search input {
+          padding: 7px 12px 7px 32px;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 10px; font-size: 13px;
+          width: 220px; outline: none;
+          background: #f8fafc;
+          transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+        }
+        .dc-search input:focus {
+          border-color: #6366f1;
+          box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
           background: #fff;
-          transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+        }
+
+        /* ── Car cards ── */
+        .car-card-outer {
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+          transition: transform 0.22s, box-shadow 0.22s;
           cursor: default;
         }
-        .car-card:hover {
-          box-shadow: 0 4px 20px rgba(79,110,247,0.1);
-          border-color: #c5cffa;
-          transform: translateY(-2px);
+        .car-card-outer:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 32px rgba(0,0,0,0.18);
         }
-        .car-card-header {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: 12px;
+        .car-card-top {
+          padding: 20px 20px 16px;
+          position: relative;
+          overflow: hidden;
+          min-height: 110px;
         }
-        .car-icon-wrap {
-          width: 38px; height: 38px;
-          background: linear-gradient(135deg, #eef1ff, #dce3ff);
-          border-radius: 10px;
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0;
+        .car-card-top-glow {
+          position: absolute; top: -30px; right: -30px;
+          width: 120px; height: 120px;
+          border-radius: 50%;
+          opacity: 0.25;
+          pointer-events: none;
         }
-        .car-marca { font-size: 13px; font-weight: 600; color: #1a1d2e; }
-        .car-modelo { font-size: 12px; color: #6b7280; }
-        .car-ano {
-          font-size: 11px;
-          background: #f4f5f9;
-          color: #6b7280;
-          padding: 2px 8px;
-          border-radius: 20px;
+        .car-plate {
           display: inline-block;
-          margin-bottom: 12px;
+          font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+          text-transform: uppercase;
+          padding: 2px 8px; border-radius: 4px;
+          border: 1px solid;
+          margin-bottom: 10px;
+          opacity: 0.7;
+        }
+        .car-name { font-size: 16px; font-weight: 700; color: #fff; margin: 0 0 2px; }
+        .car-sub  { font-size: 12px; color: rgba(255,255,255,0.55); margin: 0; }
+        .car-year-pill {
+          position: absolute; top: 16px; right: 16px;
+          font-size: 11px; font-weight: 600;
+          padding: 3px 10px; border-radius: 20px;
+          background: rgba(255,255,255,0.12);
+          border: 1px solid rgba(255,255,255,0.15);
+        }
+        .car-card-bottom {
+          padding: 14px 16px;
+          background: #fff;
+          border-top: none;
+        }
+        .car-meta {
+          display: flex; gap: 12px; margin-bottom: 12px;
+        }
+        .car-meta-item {
+          display: flex; align-items: center; gap: 4px;
+          font-size: 11px; color: #94a3b8;
         }
         .btn-solicitar {
           width: 100%;
-          background: #4f6ef7;
-          color: #fff;
-          border: none;
-          border-radius: 8px;
-          padding: 7px 12px;
-          font-size: 12.5px;
-          font-weight: 500;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
+          padding: 9px;
+          border: none; border-radius: 10px;
+          font-size: 13px; font-weight: 600;
           cursor: pointer;
-          transition: background 0.15s;
+          display: flex; align-items: center; justify-content: center; gap: 6px;
+          transition: opacity 0.15s, transform 0.1s;
+          color: #fff;
         }
-        .btn-solicitar:hover { background: #3a57e0; }
-        .pedido-row { transition: background 0.15s; }
-        .pedido-row:hover { background: #fafbff; }
-        .badge-pendente {
-          background: #fff8e1; color: #b45309;
-          padding: 3px 10px; border-radius: 20px;
+        .btn-solicitar:hover { opacity: 0.88; transform: scale(0.98); }
+
+        /* ── Pedidos table ── */
+        .dc-table-wrap { overflow: hidden; border-radius: 12px; border: 1.5px solid #f1f5f9; }
+        .dc-table { width: 100%; border-collapse: collapse; }
+        .dc-table th {
+          font-size: 10.5px; font-weight: 600; text-transform: uppercase;
+          letter-spacing: 0.6px; color: #94a3b8;
+          padding: 10px 16px; background: #f8fafc;
+          border-bottom: 1.5px solid #f1f5f9; text-align: left;
+        }
+        .dc-table td {
+          padding: 13px 16px; font-size: 13px; color: #334155;
+          border-bottom: 1px solid #f8fafc;
+        }
+        .dc-table tbody tr:last-child td { border-bottom: none; }
+        .dc-table tbody tr { transition: background 0.12s; }
+        .dc-table tbody tr:hover td { background: #fafbff; }
+        .dc-status-dot {
+          width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+        }
+        .dc-status-pill {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 4px 10px; border-radius: 20px;
           font-size: 11.5px; font-weight: 500;
         }
-        .badge-aprovado {
-          background: #e8f5e9; color: #2e7d32;
-          padding: 3px 10px; border-radius: 20px;
-          font-size: 11.5px; font-weight: 500;
+
+        /* ── Modal ── */
+        .dc-modal-overlay {
+          position: fixed; inset: 0; z-index: 1050;
+          background: rgba(15,17,23,0.65);
+          backdrop-filter: blur(4px);
+          display: flex; align-items: center; justify-content: center;
         }
-        .badge-cancelado {
-          background: #fce4e4; color: #b91c1c;
-          padding: 3px 10px; border-radius: 20px;
-          font-size: 11.5px; font-weight: 500;
+        .dc-modal {
+          background: #fff; border-radius: 20px;
+          width: 100%; max-width: 420px;
+          box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+          overflow: hidden;
         }
-        .search-wrap {
-          position: relative;
-          max-width: 280px;
+        .dc-modal-header {
+          padding: 24px 24px 0;
+          display: flex; align-items: flex-start; justify-content: space-between;
         }
-        .search-wrap svg {
-          position: absolute; left: 10px; top: 50%;
-          transform: translateY(-50%);
-          color: #9ca3af; pointer-events: none;
+        .dc-modal-car-tag {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: #eef2ff; color: #6366f1;
+          font-size: 11px; font-weight: 600;
+          padding: 3px 10px; border-radius: 20px; margin-bottom: 6px;
         }
-        .search-wrap input {
-          padding-left: 32px;
-          border-radius: 8px;
-          border: 1px solid #e0e3ed;
-          font-size: 13px;
-          height: 34px;
-          width: 100%;
-          outline: none;
+        .dc-modal-title { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; }
+        .dc-modal-close {
+          background: #f1f5f9; border: none; border-radius: 8px;
+          width: 30px; height: 30px; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          color: #64748b; font-size: 16px; transition: background 0.15s;
+        }
+        .dc-modal-close:hover { background: #e2e8f0; }
+        .dc-modal-body { padding: 20px 24px; }
+        .dc-date-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .dc-date-label { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 5px; }
+        .dc-date-input {
+          width: 100%; padding: 9px 12px;
+          border: 1.5px solid #e2e8f0; border-radius: 10px;
+          font-size: 13px; outline: none;
           transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .search-wrap input:focus {
-          border-color: #4f6ef7;
-          box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
+        .dc-date-input:focus {
+          border-color: #6366f1;
+          box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
         }
-        .modal-dias-info {
-          background: linear-gradient(135deg, #eef1ff, #f0f4ff);
-          border: 1px solid #c5cffa;
-          border-radius: 10px;
-          padding: 12px 16px;
+        .dc-duration-card {
           margin-top: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
+          background: linear-gradient(135deg, #4f46e5, #6366f1);
+          border-radius: 12px; padding: 14px 18px;
+          display: flex; align-items: center; justify-content: space-between;
         }
-        .modal-dias-label { font-size: 12px; color: #6b7280; }
-        .modal-dias-val { font-size: 15px; font-weight: 600; color: #4f6ef7; }
+        .dc-duration-label { font-size: 12px; color: rgba(255,255,255,0.7); }
+        .dc-duration-val { font-size: 18px; font-weight: 700; color: #fff; }
+        .dc-modal-footer {
+          padding: 0 24px 24px;
+          display: flex; gap: 10px; justify-content: flex-end;
+        }
+        .dc-btn-cancel {
+          padding: 9px 18px; border: 1.5px solid #e2e8f0;
+          border-radius: 10px; background: #fff;
+          font-size: 13px; font-weight: 500; color: #64748b;
+          cursor: pointer; transition: background 0.15s;
+        }
+        .dc-btn-cancel:hover { background: #f8fafc; }
+        .dc-btn-confirm {
+          padding: 9px 20px;
+          background: linear-gradient(135deg, #4f46e5, #6366f1);
+          border: none; border-radius: 10px;
+          font-size: 13px; font-weight: 600; color: #fff;
+          cursor: pointer; display: flex; align-items: center; gap: 6px;
+          transition: opacity 0.15s, transform 0.1s;
+          box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+        }
+        .dc-btn-confirm:hover { opacity: 0.9; }
+        .dc-btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
       `}</style>
 
-      <div className="container py-4">
+      <div className="dc-wrap container py-4">
 
-        {/*  Hero  */}
+        {/* ── Hero ─────────────────────────────────────────────────── */}
         <div className="dc-hero">
-          <p className="dc-hero-sub">{saudacao},</p>
-          <h2 className="dc-hero-title">{primeiroNome} 👋</h2>
-          <div className="dc-stats">
-            <div className="dc-stat">
-              <div className="dc-stat-val">{carros.length}</div>
-              <div className="dc-stat-label">Disponíveis</div>
-            </div>
-            <div className="dc-stat">
-              <div className="dc-stat-val">{pedidos.length}</div>
-              <div className="dc-stat-label">Meus pedidos</div>
-            </div>
-            <div className="dc-stat">
-              <div className="dc-stat-val">
-                {pedidos.filter(p => p.status === 'Aprovado').length}
+          <div className="dc-hero-glow1" />
+          <div className="dc-hero-glow2" />
+          <div className="dc-hero-glow3" />
+          <div className="dc-hero-tag">
+            <Car size={11} /> Painel do Cliente
+          </div>
+          <p className="dc-hero-saudacao">{saudacao},</p>
+          <h2 className="dc-hero-nome">{primeiroNome} 👋</h2>
+          <div className="dc-hero-stats">
+            {[
+              { val: carros.length,                                  label: 'Disponíveis' },
+              { val: pedidos.length,                                 label: 'Meus pedidos' },
+              { val: pedidos.filter(p => p.status === 'Aprovado').length, label: 'Aprovados' },
+              { val: pedidos.filter(p => p.status === 'Pendente').length, label: 'Pendentes' },
+            ].map(s => (
+              <div className="dc-stat" key={s.label}>
+                <div className="dc-stat-val">{s.val}</div>
+                <div className="dc-stat-label">{s.label}</div>
               </div>
-              <div className="dc-stat-label">Aprovados</div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Carros disponíveis  */}
+        {/* ── Carros disponíveis ──────────────────────────────────── */}
         <div className="card border-0 shadow-sm mb-4">
           <div className="card-body p-4">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <div className="dc-section-title mb-0">
-                <Car size={16} /> Carros disponíveis
+            <div className="dc-sh">
+              <div className="dc-sh-left">
+                <div className="dc-sh-icon"><Car size={15} color="#fff" /></div>
+                <span className="dc-sh-title">Carros disponíveis</span>
+                <span className="dc-sh-count">{carrosFiltrados.length}</span>
               </div>
-              <div className="search-wrap">
+              <div className="dc-search">
                 <Search size={14} />
-                <input placeholder="Buscar marca ou modelo..."
-                  value={busca} onChange={e => setBusca(e.target.value)} />
+                <input placeholder="Buscar..." value={busca} onChange={e => setBusca(e.target.value)} />
               </div>
             </div>
 
             {carrosFiltrados.length === 0 ? (
-              <p className="text-center text-muted py-4 mb-0">Nenhum carro disponível.</p>
+              <p className="text-center text-muted py-4 mb-0 small">Nenhum carro disponível no momento.</p>
             ) : (
               <div className="row g-3">
-                {carrosFiltrados.map(c => (
-                  <div className="col-sm-6 col-lg-4" key={c.id}>
-                    <div className="car-card">
-                      <div className="car-card-header">
-                        <div className="car-icon-wrap">
-                          <Car size={18} color="#4f6ef7" />
+                {carrosFiltrados.map(c => {
+                  const pal = CAR_PALETTES[paletteIdx[c.id] ?? 0]
+                  return (
+                    <div className="col-sm-6 col-xl-4" key={c.id}>
+                      <div className="car-card-outer">
+                        {/* Top colorido */}
+                        <div className="car-card-top"
+                          style={{ background: `linear-gradient(135deg, ${pal.from}, ${pal.to})` }}>
+                          <div className="car-card-top-glow"
+                            style={{ background: `radial-gradient(circle, ${pal.accent}, transparent)` }} />
+                          <div className="car-plate"
+                            style={{ color: pal.accent, borderColor: pal.accent }}>
+                            {c.placa ?? '---'}
+                          </div>
+                          <p className="car-name">{c.marca}</p>
+                          <p className="car-sub">{c.modelo}</p>
+                          <span className="car-year-pill" style={{ color: pal.accent }}>
+                            {c.ano}
+                          </span>
                         </div>
-                        <div>
-                          <div className="car-marca">{c.marca}</div>
-                          <div className="car-modelo">{c.modelo}</div>
+                        {/* Bottom branco */}
+                        <div className="car-card-bottom">
+                          <div className="car-meta">
+                            <div className="car-meta-item"><Fuel size={11} /> Flex</div>
+                            <div className="car-meta-item"><Gauge size={11} /> 0 km</div>
+                          </div>
+                          <button className="btn-solicitar"
+                            style={{ background: `linear-gradient(135deg, ${pal.from}, ${pal.to})` }}
+                            onClick={() => abrirModal(c)}>
+                            <PlusCircle size={13} /> Solicitar aluguel
+                          </button>
                         </div>
                       </div>
-                      <span className="car-ano">{c.ano}</span>
-                      <button className="btn-solicitar" onClick={() => abrirModal(c)}>
-                        <PlusCircle size={13} /> Solicitar aluguel
-                      </button>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
         </div>
 
-        {/*  Meus pedidos  */}
+        {/* ── Meus pedidos ───────────────────────────────────────── */}
         <div className="card border-0 shadow-sm">
           <div className="card-body p-4">
-            <div className="dc-section-title">
-              <ClipboardList size={16} /> Meus pedidos
+            <div className="dc-sh mb-4">
+              <div className="dc-sh-left">
+                <div className="dc-sh-icon"><ClipboardList size={15} color="#fff" /></div>
+                <span className="dc-sh-title">Meus pedidos</span>
+                <span className="dc-sh-count">{pedidos.length}</span>
+              </div>
             </div>
+
             {pedidos.length === 0 ? (
               <p className="text-center text-muted py-3 mb-0 small">Você ainda não fez nenhum pedido.</p>
             ) : (
-              <div className="table-responsive">
-                <table className="table align-middle mb-0">
+              <div className="dc-table-wrap">
+                <table className="dc-table">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #e8eaf0' }}>
-                      {['Carro', 'Retirada', 'Devolução', 'Dias', 'Status'].map(h => (
-                        <th key={h} style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
-                          letterSpacing: '0.5px', color: '#9ca3af', paddingBottom: 10, border: 'none' }}>
-                          {h}
-                        </th>
+                    <tr>
+                      {['Veículo', 'Retirada', 'Devolução', 'Duração', 'Status'].map(h => (
+                        <th key={h}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {pedidos.map(p => (
-                      <tr key={p.id} className="pedido-row">
-                        <td style={{ fontWeight: 500, fontSize: 13 }}>{p.carro}</td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6b7280' }}>
-                            <CalendarDays size={12} /> {p.dataInicio}
-                          </div>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6b7280' }}>
-                            <CalendarDays size={12} /> {p.dataFim}
-                          </div>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6b7280' }}>
-                            <Clock size={12} /> {p.dias}d
-                          </div>
-                        </td>
-                        <td>
-                          <span className={STATUS_CONFIG[p.status]?.badge}>
-                            {STATUS_CONFIG[p.status]?.label}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {pedidos.map(p => {
+                      const s = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.Cancelado
+                      return (
+                        <tr key={p.id}>
+                          <td style={{ fontWeight: 600 }}>{p.carro}</td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
+                              <CalendarDays size={12} color="#6366f1" /> {p.dataInicio}
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
+                              <CalendarDays size={12} color="#6366f1" /> {p.dataFim}
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
+                              <Clock size={12} color="#6366f1" /> {p.dias}d
+                            </div>
+                          </td>
+                          <td>
+                            <span className="dc-status-pill"
+                              style={{ background: s.bg, color: s.color }}>
+                              <span className="dc-status-dot" style={{ background: s.dot }} />
+                              {s.label}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -396,61 +519,64 @@ export default function DashboardCliente({ usuario }) {
           </div>
         </div>
 
-        {/*  Modal  */}
+        {/* ── Modal ──────────────────────────────────────────────── */}
         {modalAberto && (
-          <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content border-0 shadow-lg" style={{ borderRadius: 16 }}>
-                <div className="modal-header border-0 pb-0 pt-4 px-4">
+          <div className="dc-modal-overlay" onClick={fecharModal}>
+            <div className="dc-modal" onClick={e => e.stopPropagation()}>
+              <div className="dc-modal-header">
+                <div>
+                  <div className="dc-modal-car-tag">
+                    <Car size={11} /> {carroSelecionado?.marca} {carroSelecionado?.modelo}
+                  </div>
+                  <h5 className="dc-modal-title">Solicitar aluguel</h5>
+                </div>
+                <button className="dc-modal-close" onClick={fecharModal}>✕</button>
+              </div>
+
+              <div className="dc-modal-body">
+                <div className="dc-date-group">
                   <div>
-                    <h5 className="modal-title fw-semibold mb-0">Solicitar aluguel</h5>
-                    <p className="text-muted small mb-0 mt-1">
-                      {carroSelecionado?.marca} {carroSelecionado?.modelo} · {carroSelecionado?.ano}
-                    </p>
+                    <div className="dc-date-label">Retirada</div>
+                    <input type="date" className="dc-date-input"
+                      value={dataInicio}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={e => { setDataInicio(e.target.value); setErroModal('') }} />
                   </div>
-                  <button className="btn-close" onClick={fecharModal} />
-                </div>
-                <div className="modal-body px-4 pt-3">
-                  <div className="row g-3">
-                    <div className="col-6">
-                      <label className="form-label fw-medium small">Data de retirada</label>
-                      <input type="date" className="form-control"
-                        value={dataInicio}
-                        min={new Date().toISOString().split('T')[0]}
-                        onChange={e => { setDataInicio(e.target.value); setErroModal('') }} />
-                    </div>
-                    <div className="col-6">
-                      <label className="form-label fw-medium small">Data de devolução</label>
-                      <input type="date" className="form-control"
-                        value={dataFim}
-                        min={dataInicio || new Date().toISOString().split('T')[0]}
-                        onChange={e => { setDataFim(e.target.value); setErroModal('') }} />
-                    </div>
+                  <div>
+                    <div className="dc-date-label">Devolução</div>
+                    <input type="date" className="dc-date-input"
+                      value={dataFim}
+                      min={dataInicio || new Date().toISOString().split('T')[0]}
+                      onChange={e => { setDataFim(e.target.value); setErroModal('') }} />
                   </div>
+                </div>
 
-                  {dias > 0 && (
-                    <div className="modal-dias-info">
-                      <span className="modal-dias-label">Duração do aluguel</span>
-                      <span className="modal-dias-val">{dias} dia{dias > 1 ? 's' : ''}</span>
+                {dias > 0 && (
+                  <div className="dc-duration-card">
+                    <div>
+                      <div className="dc-duration-label">Duração do aluguel</div>
+                      <div className="dc-duration-val">{dias} dia{dias > 1 ? 's' : ''}</div>
                     </div>
-                  )}
+                    <Clock size={28} color="rgba(255,255,255,0.3)" />
+                  </div>
+                )}
 
-                  {erroModal && (
-                    <div className="alert alert-danger py-2 small mt-3 mb-0">{erroModal}</div>
-                  )}
-                </div>
-                <div className="modal-footer border-0 px-4 pb-4 pt-2">
-                  <button className="btn btn-outline-secondary btn-sm" onClick={fecharModal}>
-                    Cancelar
-                  </button>
-                  <button className="btn btn-primary btn-sm d-flex align-items-center gap-2"
-                    onClick={handleSolicitarAluguel} disabled={enviando}>
-                    {enviando
-                      ? <span className="spinner-border spinner-border-sm" />
-                      : <PlusCircle size={13} />}
-                    {enviando ? 'Enviando...' : 'Confirmar pedido'}
-                  </button>
-                </div>
+                {erroModal && (
+                  <div style={{ marginTop: 12, padding: '8px 12px', background: '#fff1f2',
+                    border: '1px solid #fecdd3', borderRadius: 8, fontSize: 13, color: '#e11d48' }}>
+                    {erroModal}
+                  </div>
+                )}
+              </div>
+
+              <div className="dc-modal-footer">
+                <button className="dc-btn-cancel" onClick={fecharModal}>Cancelar</button>
+                <button className="dc-btn-confirm" onClick={handleSolicitarAluguel} disabled={enviando}>
+                  {enviando
+                    ? <span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14 }} />
+                    : <PlusCircle size={14} />}
+                  {enviando ? 'Enviando...' : 'Confirmar pedido'}
+                </button>
               </div>
             </div>
           </div>

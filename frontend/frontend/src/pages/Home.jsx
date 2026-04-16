@@ -35,6 +35,8 @@ export default function Home() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
         .home-root {
           min-height: 100vh;
           background: #f4f5f9;
@@ -111,12 +113,13 @@ export default function Home() {
           margin-bottom: 20px;
         }
         .home-hero h1 {
-          font-size: 48px;
+          font-family: 'Rajdhani', sans-serif;
+          font-size: 58px;
           font-weight: 700;
           color: #fff;
-          line-height: 1.15;
+          line-height: 1.1;
           margin: 0 0 16px;
-          letter-spacing: -1px;
+          letter-spacing: 0px;
         }
         .home-hero h1 span { color: #6c8ef7; }
         .home-hero p {
