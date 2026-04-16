@@ -1,23 +1,22 @@
 import { useState, useEffect } from 'react'
-import { Car, PlusCircle, ClipboardList, Search, CalendarDays, Clock, Fuel, Gauge } from 'lucide-react'
+import { Car, PlusCircle, ClipboardList, Search, CalendarDays, Clock, Fuel, Gauge, Zap } from 'lucide-react'
 
 const API_CARROS  = 'http://localhost:8080/automoveis/disponiveis'
 const API_PEDIDOS = 'http://localhost:8080/pedidos'
 
 const STATUS_CONFIG = {
-  Pendente:  { bg: '#fffbeb', color: '#d97706', dot: '#f59e0b', label: 'Pendente'  },
-  Aprovado:  { bg: '#f0fdf4', color: '#16a34a', dot: '#22c55e', label: 'Aprovado'  },
-  Cancelado: { bg: '#fff1f2', color: '#e11d48', dot: '#f43f5e', label: 'Cancelado' },
+  Pendente:  { bg: 'rgba(232,164,59,0.1)',  color: '#e8a43b', dot: '#e8a43b', label: 'Pendente'  },
+  Aprovado:  { bg: 'rgba(45,212,160,0.1)',  color: '#2dd4a0', dot: '#2dd4a0', label: 'Aprovado'  },
+  Cancelado: { bg: 'rgba(245,84,106,0.1)',  color: '#f5546a', dot: '#f5546a', label: 'Cancelado' },
 }
 
-// Cores para cada card de carro (cicla entre elas)
 const CAR_PALETTES = [
-  { from: '#1e3a5f', to: '#2d6a9f', accent: '#60a5fa' },
-  { from: '#1a1a2e', to: '#16213e', accent: '#818cf8' },
-  { from: '#0f3460', to: '#533483', accent: '#a78bfa' },
-  { from: '#1b2838', to: '#2a475e', accent: '#38bdf8' },
-  { from: '#0d2137', to: '#1a3a5c', accent: '#34d399' },
-  { from: '#1e1e2e', to: '#313244', accent: '#f5c2e7' },
+  { top: 'linear-gradient(135deg,#0f1e3d,#1a3a6c)', accent: '#60a5fa', glow: 'rgba(96,165,250,0.3)' },
+  { top: 'linear-gradient(135deg,#1a0e2e,#2d1a5e)', accent: '#a78bfa', glow: 'rgba(167,139,250,0.3)' },
+  { top: 'linear-gradient(135deg,#0c1f1a,#0f3326)', accent: '#34d399', glow: 'rgba(52,211,153,0.3)' },
+  { top: 'linear-gradient(135deg,#1a1000,#3d2800)', accent: '#e8a43b', glow: 'rgba(232,164,59,0.3)' },
+  { top: 'linear-gradient(135deg,#1f0e0e,#3d1515)', accent: '#f87171', glow: 'rgba(248,113,113,0.3)' },
+  { top: 'linear-gradient(135deg,#0d1a26,#0f2d40)', accent: '#38bdf8', glow: 'rgba(56,189,248,0.3)' },
 ]
 
 export default function DashboardCliente({ usuario }) {
@@ -44,7 +43,6 @@ export default function DashboardCliente({ usuario }) {
       const res  = await fetch(API_CARROS)
       const data = await res.json()
       setCarros(data)
-      // Atribui paleta fixa para cada carro
       const idx = {}
       data.forEach((c, i) => { idx[c.id] = i % CAR_PALETTES.length })
       setPaletteIdx(idx)
@@ -86,8 +84,8 @@ export default function DashboardCliente({ usuario }) {
   const fecharModal = () => { setModalAberto(false); setCarroSelecionado(null) }
 
   const handleSolicitarAluguel = async () => {
-    if (!dataInicio || !dataFim) { setErroModal('Informe as datas.'); return }
-    if (new Date(dataFim) <= new Date(dataInicio)) { setErroModal('Data de devolução deve ser após a retirada.'); return }
+    if (!dataInicio || !dataFim) { setErroModal('Informe as datas de retirada e devolução.'); return }
+    if (new Date(dataFim) <= new Date(dataInicio)) { setErroModal('A devolução deve ser após a retirada.'); return }
     setEnviando(true); setErroModal('')
     try {
       const res = await fetch(API_PEDIDOS, {
@@ -97,7 +95,7 @@ export default function DashboardCliente({ usuario }) {
       })
       if (!res.ok) throw new Error()
       await carregarPedidos(); await carregarCarros(); fecharModal()
-    } catch { setErroModal('Erro ao enviar pedido.') }
+    } catch { setErroModal('Erro ao enviar pedido. Tente novamente.') }
     finally { setEnviando(false) }
   }
 
@@ -111,440 +109,550 @@ export default function DashboardCliente({ usuario }) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-        .dc-wrap { font-family: 'DM Sans', sans-serif; }
+        .dcl-wrap { font-family: 'Sora', sans-serif; -webkit-font-smoothing: antialiased; }
 
         /* ── Hero ── */
-        .dc-hero {
-          background: linear-gradient(135deg, #0f1117 0%, #1e2540 60%, #162048 100%);
+        .dcl-hero {
+          background: linear-gradient(135deg, #0d1018 0%, #111520 60%, #0a0e16 100%);
+          border: 1px solid rgba(255,255,255,0.06);
           border-radius: 20px;
           padding: 32px 36px;
-          margin-bottom: 28px;
+          margin-bottom: 24px;
           position: relative;
           overflow: hidden;
         }
-        .dc-hero-glow1 {
-          position: absolute; top: -60px; right: -20px;
-          width: 260px; height: 260px;
-          background: radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%);
-          pointer-events: none;
+        .dcl-hero-orb1 {
+          position: absolute; top: -50px; right: -20px;
+          width: 260px; height: 200px;
+          background: radial-gradient(ellipse, rgba(45,212,160,0.1) 0%, transparent 70%);
+          pointer-events: none; border-radius: 50%;
         }
-        .dc-hero-glow2 {
-          position: absolute; bottom: -80px; right: 140px;
-          width: 200px; height: 200px;
-          background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%);
-          pointer-events: none;
+        .dcl-hero-orb2 {
+          position: absolute; bottom: -60px; left: 30%;
+          width: 200px; height: 160px;
+          background: radial-gradient(ellipse, rgba(91,142,247,0.08) 0%, transparent 70%);
+          pointer-events: none; border-radius: 50%;
         }
-        .dc-hero-glow3 {
-          position: absolute; top: 10px; left: 40%;
-          width: 120px; height: 120px;
-          background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
-          pointer-events: none;
-        }
-        .dc-hero-tag {
+        .dcl-hero-tag {
           display: inline-flex; align-items: center; gap: 6px;
-          background: rgba(99,102,241,0.2);
-          border: 1px solid rgba(99,102,241,0.35);
-          color: #a5b4fc; font-size: 11px; font-weight: 500;
+          background: rgba(45,212,160,0.08);
+          border: 1px solid rgba(45,212,160,0.2);
+          color: #2dd4a0; font-size: 10.5px; font-weight: 600;
           padding: 3px 10px; border-radius: 20px; margin-bottom: 10px;
-          letter-spacing: 0.3px;
+          letter-spacing: 0.5px; text-transform: uppercase;
         }
-        .dc-hero-saudacao { font-size: 13px; color: #94a3b8; margin: 0; }
-        .dc-hero-nome { font-size: 26px; font-weight: 700; color: #fff; margin: 2px 0 20px; letter-spacing: -0.5px; }
-        .dc-hero-stats { display: flex; gap: 12px; flex-wrap: wrap; }
-        .dc-stat {
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.08);
+        .dcl-hero-sub  { font-size: 12.5px; color: #4a5270; margin: 0; }
+        .dcl-hero-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 26px; font-weight: 700;
+          color: #f0f2f8; margin: 4px 0 24px; letter-spacing: -0.3px;
+        }
+        .dcl-stats { display: flex; gap: 14px; flex-wrap: wrap; }
+        .dcl-stat {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.07);
           border-radius: 12px;
-          padding: 12px 18px;
-          min-width: 100px;
-          backdrop-filter: blur(4px);
+          padding: 12px 20px; min-width: 100px;
         }
-        .dc-stat-val { font-size: 22px; font-weight: 700; color: #fff; line-height: 1; }
-        .dc-stat-label { font-size: 11px; color: #64748b; margin-top: 4px; letter-spacing: 0.3px; }
+        .dcl-stat-val { font-size: 22px; font-weight: 700; color: #f0f2f8; line-height: 1; }
+        .dcl-stat-label { font-size: 10.5px; color: #4a5270; margin-top: 3px; letter-spacing: 0.3px; }
 
-        /* ── Section header ── */
-        .dc-sh {
+        /* ── Section ── */
+        .dcl-card {
+          background: #0d1018;
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 18px;
+          box-shadow: 0 2px 24px rgba(0,0,0,0.3);
+          padding: 24px;
+          margin-bottom: 20px;
+        }
+        .dcl-section-header {
           display: flex; align-items: center; justify-content: space-between;
           margin-bottom: 20px;
         }
-        .dc-sh-left { display: flex; align-items: center; gap: 8px; }
-        .dc-sh-icon {
-          width: 32px; height: 32px; border-radius: 8px;
-          background: linear-gradient(135deg, #4f46e5, #6366f1);
+        .dcl-section-left { display: flex; align-items: center; gap: 10px; }
+        .dcl-section-icon {
+          width: 30px; height: 30px;
+          background: rgba(232,164,59,0.1);
+          border: 1px solid rgba(232,164,59,0.2);
+          border-radius: 8px;
           display: flex; align-items: center; justify-content: center;
+          color: #e8a43b;
         }
-        .dc-sh-title { font-size: 15px; font-weight: 600; color: #0f172a; }
-        .dc-sh-count {
-          font-size: 11px; font-weight: 600; color: #6366f1;
-          background: #eef2ff; border-radius: 20px; padding: 2px 8px;
+        .dcl-section-title { font-size: 13px; font-weight: 700; color: #f0f2f8; }
+        .dcl-section-count {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 10.5px; color: #e8a43b;
+          background: rgba(232,164,59,0.1);
+          border: 1px solid rgba(232,164,59,0.2);
+          padding: 1px 8px; border-radius: 20px;
         }
 
         /* ── Search ── */
-        .dc-search {
-          position: relative;
+        .dcl-search { position: relative; }
+        .dcl-search-icon {
+          position: absolute; left: 11px; top: 50%;
+          transform: translateY(-50%); color: #4a5270; pointer-events: none;
         }
-        .dc-search svg {
-          position: absolute; left: 10px; top: 50%;
-          transform: translateY(-50%); color: #94a3b8; pointer-events: none;
-        }
-        .dc-search input {
-          padding: 7px 12px 7px 32px;
-          border: 1.5px solid #e2e8f0;
+        .dcl-search-input {
+          padding: 8px 14px 8px 34px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
           border-radius: 10px; font-size: 13px;
+          color: #f0f2f8;
+          font-family: 'Sora', sans-serif;
           width: 220px; outline: none;
-          background: #f8fafc;
-          transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+          transition: border-color 0.15s, background 0.15s;
         }
-        .dc-search input:focus {
-          border-color: #6366f1;
-          box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
-          background: #fff;
+        .dcl-search-input::placeholder { color: #2e3450; }
+        .dcl-search-input:focus {
+          border-color: rgba(232,164,59,0.4);
+          background: rgba(255,255,255,0.06);
         }
 
         /* ── Car cards ── */
-        .car-card-outer {
+        .dcl-car-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+
+        .dcl-car-card {
           border-radius: 16px;
           overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-          transition: transform 0.22s, box-shadow 0.22s;
-          cursor: default;
+          border: 1px solid rgba(255,255,255,0.08);
+          transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
         }
-        .car-card-outer:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+        .dcl-car-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 16px 40px rgba(0,0,0,0.4);
         }
-        .car-card-top {
-          padding: 20px 20px 16px;
+
+        .dcl-car-top {
+          padding: 20px;
           position: relative;
           overflow: hidden;
-          min-height: 110px;
+          min-height: 130px;
         }
-        .car-card-top-glow {
+        .dcl-car-glow {
           position: absolute; top: -30px; right: -30px;
-          width: 120px; height: 120px;
-          border-radius: 50%;
-          opacity: 0.25;
-          pointer-events: none;
+          width: 130px; height: 130px; border-radius: 50%;
+          opacity: 0.35; pointer-events: none;
         }
-        .car-plate {
-          display: inline-block;
-          font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-          text-transform: uppercase;
-          padding: 2px 8px; border-radius: 4px;
+        .dcl-car-plate {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 9.5px; font-weight: 600;
+          letter-spacing: 1.8px; text-transform: uppercase;
+          padding: 2px 9px; border-radius: 4px;
           border: 1px solid;
-          margin-bottom: 10px;
+          display: inline-block;
+          margin-bottom: 14px;
           opacity: 0.7;
         }
-        .car-name { font-size: 16px; font-weight: 700; color: #fff; margin: 0 0 2px; }
-        .car-sub  { font-size: 12px; color: rgba(255,255,255,0.55); margin: 0; }
-        .car-year-pill {
+        .dcl-car-brand { font-size: 18px; font-weight: 700; color: #fff; margin: 0 0 2px; }
+        .dcl-car-model { font-size: 12.5px; color: rgba(255,255,255,0.5); margin: 0; }
+        .dcl-car-year {
           position: absolute; top: 16px; right: 16px;
-          font-size: 11px; font-weight: 600;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 10.5px; font-weight: 600;
           padding: 3px 10px; border-radius: 20px;
-          background: rgba(255,255,255,0.12);
-          border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.12);
         }
-        .car-card-bottom {
+
+        .dcl-car-bottom {
+          background: #111520;
           padding: 14px 16px;
-          background: #fff;
-          border-top: none;
+          border-top: 1px solid rgba(255,255,255,0.05);
         }
-        .car-meta {
-          display: flex; gap: 12px; margin-bottom: 12px;
+        .dcl-car-meta {
+          display: flex; gap: 14px; margin-bottom: 14px;
         }
-        .car-meta-item {
-          display: flex; align-items: center; gap: 4px;
-          font-size: 11px; color: #94a3b8;
+        .dcl-car-meta-item {
+          display: flex; align-items: center; gap: 5px;
+          font-size: 11px; color: #4a5270;
         }
-        .btn-solicitar {
-          width: 100%;
-          padding: 9px;
+        .dcl-btn-solicitar {
+          width: 100%; padding: 10px;
           border: none; border-radius: 10px;
-          font-size: 13px; font-weight: 600;
+          font-family: 'Sora', sans-serif;
+          font-size: 13px; font-weight: 700;
           cursor: pointer;
-          display: flex; align-items: center; justify-content: center; gap: 6px;
+          display: flex; align-items: center; justify-content: center; gap: 7px;
           transition: opacity 0.15s, transform 0.1s;
-          color: #fff;
+          color: #000;
+          letter-spacing: 0.2px;
         }
-        .btn-solicitar:hover { opacity: 0.88; transform: scale(0.98); }
+        .dcl-btn-solicitar:hover { opacity: 0.85; transform: scale(0.98); }
 
         /* ── Pedidos table ── */
-        .dc-table-wrap { overflow: hidden; border-radius: 12px; border: 1.5px solid #f1f5f9; }
-        .dc-table { width: 100%; border-collapse: collapse; }
-        .dc-table th {
-          font-size: 10.5px; font-weight: 600; text-transform: uppercase;
-          letter-spacing: 0.6px; color: #94a3b8;
-          padding: 10px 16px; background: #f8fafc;
-          border-bottom: 1.5px solid #f1f5f9; text-align: left;
-        }
-        .dc-table td {
-          padding: 13px 16px; font-size: 13px; color: #334155;
-          border-bottom: 1px solid #f8fafc;
-        }
-        .dc-table tbody tr:last-child td { border-bottom: none; }
-        .dc-table tbody tr { transition: background 0.12s; }
-        .dc-table tbody tr:hover td { background: #fafbff; }
-        .dc-status-dot {
-          width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
-        }
-        .dc-status-pill {
+        .dcl-status-pill {
           display: inline-flex; align-items: center; gap: 6px;
-          padding: 4px 10px; border-radius: 20px;
+          padding: 4px 11px; border-radius: 20px;
           font-size: 11.5px; font-weight: 500;
         }
+        .dcl-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
         /* ── Modal ── */
-        .dc-modal-overlay {
+        .dcl-modal-overlay {
           position: fixed; inset: 0; z-index: 1050;
-          background: rgba(15,17,23,0.65);
-          backdrop-filter: blur(4px);
+          background: rgba(4,5,10,0.75);
+          backdrop-filter: blur(10px);
           display: flex; align-items: center; justify-content: center;
         }
-        .dc-modal {
-          background: #fff; border-radius: 20px;
-          width: 100%; max-width: 420px;
-          box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+        .dcl-modal {
+          background: #0d1018;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 22px;
+          width: 100%; max-width: 430px;
+          box-shadow: 0 28px 80px rgba(0,0,0,0.5);
           overflow: hidden;
         }
-        .dc-modal-header {
-          padding: 24px 24px 0;
+        .dcl-modal-header {
+          padding: 24px 24px 18px;
+          border-bottom: 1px solid rgba(255,255,255,0.06);
           display: flex; align-items: flex-start; justify-content: space-between;
         }
-        .dc-modal-car-tag {
+        .dcl-modal-car-tag {
           display: inline-flex; align-items: center; gap: 6px;
-          background: #eef2ff; color: #6366f1;
-          font-size: 11px; font-weight: 600;
-          padding: 3px 10px; border-radius: 20px; margin-bottom: 6px;
+          background: rgba(232,164,59,0.08);
+          border: 1px solid rgba(232,164,59,0.2);
+          color: #e8a43b; font-size: 10.5px; font-weight: 600;
+          padding: 3px 10px; border-radius: 20px; margin-bottom: 8px;
+          letter-spacing: 0.3px;
         }
-        .dc-modal-title { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; }
-        .dc-modal-close {
-          background: #f1f5f9; border: none; border-radius: 8px;
-          width: 30px; height: 30px; cursor: pointer;
+        .dcl-modal-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 18px; font-weight: 700; color: #f0f2f8; margin: 0;
+        }
+        .dcl-modal-close {
+          width: 30px; height: 30px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 8px;
+          color: #8b94b0; cursor: pointer;
           display: flex; align-items: center; justify-content: center;
-          color: #64748b; font-size: 16px; transition: background 0.15s;
+          font-size: 15px; transition: all 0.15s;
         }
-        .dc-modal-close:hover { background: #e2e8f0; }
-        .dc-modal-body { padding: 20px 24px; }
-        .dc-date-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .dc-date-label { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 5px; }
-        .dc-date-input {
-          width: 100%; padding: 9px 12px;
-          border: 1.5px solid #e2e8f0; border-radius: 10px;
+        .dcl-modal-close:hover {
+          background: rgba(245,84,106,0.1); color: #f5546a;
+          border-color: rgba(245,84,106,0.25);
+        }
+        .dcl-modal-body { padding: 22px 24px; }
+
+        .dcl-date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .dcl-date-label {
+          font-size: 11px; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 0.7px;
+          color: #4a5270; margin-bottom: 7px; display: block;
+        }
+        .dcl-date-input {
+          width: 100%; padding: 10px 12px;
+          background: #111520;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 9px;
+          color: #f0f2f8;
+          font-family: 'Sora', sans-serif;
           font-size: 13px; outline: none;
           transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .dc-date-input:focus {
-          border-color: #6366f1;
-          box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        .dcl-date-input:focus {
+          border-color: rgba(232,164,59,0.45);
+          box-shadow: 0 0 0 3px rgba(232,164,59,0.08);
         }
-        .dc-duration-card {
+
+        .dcl-duration-card {
           margin-top: 16px;
-          background: linear-gradient(135deg, #4f46e5, #6366f1);
+          background: linear-gradient(135deg, rgba(232,164,59,0.12), rgba(194,127,34,0.08));
+          border: 1px solid rgba(232,164,59,0.2);
           border-radius: 12px; padding: 14px 18px;
           display: flex; align-items: center; justify-content: space-between;
         }
-        .dc-duration-label { font-size: 12px; color: rgba(255,255,255,0.7); }
-        .dc-duration-val { font-size: 18px; font-weight: 700; color: #fff; }
-        .dc-modal-footer {
+        .dcl-dur-label { font-size: 11px; color: #8b7041; margin-bottom: 3px; }
+        .dcl-dur-val { font-size: 20px; font-weight: 700; color: #e8a43b; }
+
+        .dcl-modal-error {
+          margin-top: 14px; padding: 11px 14px;
+          background: rgba(245,84,106,0.08);
+          border: 1px solid rgba(245,84,106,0.22);
+          border-radius: 9px; font-size: 13px; color: #f9a0af;
+        }
+
+        .dcl-modal-footer {
           padding: 0 24px 24px;
           display: flex; gap: 10px; justify-content: flex-end;
         }
-        .dc-btn-cancel {
-          padding: 9px 18px; border: 1.5px solid #e2e8f0;
-          border-radius: 10px; background: #fff;
-          font-size: 13px; font-weight: 500; color: #64748b;
-          cursor: pointer; transition: background 0.15s;
+        .dcl-btn-cancel {
+          padding: 10px 20px;
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 10px;
+          font-family: 'Sora', sans-serif;
+          font-size: 13px; font-weight: 500;
+          color: #8b94b0; cursor: pointer;
+          transition: all 0.15s;
         }
-        .dc-btn-cancel:hover { background: #f8fafc; }
-        .dc-btn-confirm {
-          padding: 9px 20px;
-          background: linear-gradient(135deg, #4f46e5, #6366f1);
+        .dcl-btn-cancel:hover { background: rgba(255,255,255,0.04); color: #f0f2f8; }
+        .dcl-btn-confirm {
+          display: flex; align-items: center; gap: 7px;
+          padding: 10px 24px;
+          background: linear-gradient(135deg, #e8a43b, #c27f22);
           border: none; border-radius: 10px;
-          font-size: 13px; font-weight: 600; color: #fff;
-          cursor: pointer; display: flex; align-items: center; gap: 6px;
-          transition: opacity 0.15s, transform 0.1s;
-          box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+          font-family: 'Sora', sans-serif;
+          font-size: 13px; font-weight: 700; color: #000;
+          cursor: pointer;
+          box-shadow: 0 4px 16px rgba(232,164,59,0.3);
+          transition: all 0.2s; letter-spacing: 0.2px;
         }
-        .dc-btn-confirm:hover { opacity: 0.9; }
-        .dc-btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .dcl-btn-confirm:hover:not(:disabled) {
+          box-shadow: 0 8px 26px rgba(232,164,59,0.5);
+          transform: translateY(-1px);
+        }
+        .dcl-btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* ── Table Dark Override (Cliente) ── */
+        .table {
+          background: transparent !important;
+          color: #f0f2f8 !important;
+          margin-bottom: 0;
+          border-collapse: separate;
+          border-spacing: 0;
+        }
+
+        .table thead {
+          background: transparent !important;
+        }
+
+        .table thead th {
+          color: #4a5270 !important;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          font-weight: 600;
+          padding: 14px 12px;
+          border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+        }
+
+        .table tbody tr {
+          background: transparent !important;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+          transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+          background: rgba(255,255,255,0.03) !important;
+        }
+
+        .table td {
+          border: none !important;
+          padding: 14px 12px;
+          color: #d4d8e5;
+          vertical-align: middle;
+        }
+
+        /* remove fundo branco interno do bootstrap */
+        .table > :not(caption) > * > * {
+          background-color: transparent !important;
+        }
+
+        /* zebra leve */
+        .table tbody tr:nth-child(even) {
+          background: rgba(255,255,255,0.015);
+        }
+
+        /* bordas arredondadas */
+        .table thead tr th:first-child {
+          border-top-left-radius: 10px;
+        }
+        .table thead tr th:last-child {
+          border-top-right-radius: 10px;
+        }
+        .table tbody tr:last-child td:first-child {
+          border-bottom-left-radius: 10px;
+        }
+        .table tbody tr:last-child td:last-child {
+          border-bottom-right-radius: 10px;
+        }
+
+        /* container */
+        .table-responsive {
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        /* hover premium */
+        .table tbody tr:hover td {
+          color: #f0f2f8;
+        }
+
+        /* efeito glass leve */
+        .table tbody tr {
+          backdrop-filter: blur(6px);
+        }
       `}</style>
 
-      <div className="dc-wrap container py-4">
+      <div className="dcl-wrap">
 
-        {/* ── Hero ─────────────────────────────────────────────────── */}
-        <div className="dc-hero">
-          <div className="dc-hero-glow1" />
-          <div className="dc-hero-glow2" />
-          <div className="dc-hero-glow3" />
-          <div className="dc-hero-tag">
-            <Car size={11} /> Painel do Cliente
-          </div>
-          <p className="dc-hero-saudacao">{saudacao},</p>
-          <h2 className="dc-hero-nome">{primeiroNome} 👋</h2>
-          <div className="dc-hero-stats">
+        {/* Hero */}
+        <div className="dcl-hero">
+          <div className="dcl-hero-orb1" />
+          <div className="dcl-hero-orb2" />
+          <div className="dcl-hero-tag"><Car size={10} /> Painel do Cliente</div>
+          <p className="dcl-hero-sub">{saudacao},</p>
+          <h2 className="dcl-hero-title">{primeiroNome} 👋</h2>
+          <div className="dcl-stats">
             {[
-              { val: carros.length,                                  label: 'Disponíveis' },
-              { val: pedidos.length,                                 label: 'Meus pedidos' },
-              { val: pedidos.filter(p => p.status === 'Aprovado').length, label: 'Aprovados' },
-              { val: pedidos.filter(p => p.status === 'Pendente').length, label: 'Pendentes' },
+              { val: carros.length,                                       label: 'Disponíveis' },
+              { val: pedidos.length,                                      label: 'Meus pedidos' },
+              { val: pedidos.filter(p => p.status === 'Aprovado').length, label: 'Aprovados'   },
+              { val: pedidos.filter(p => p.status === 'Pendente').length, label: 'Pendentes'   },
             ].map(s => (
-              <div className="dc-stat" key={s.label}>
-                <div className="dc-stat-val">{s.val}</div>
-                <div className="dc-stat-label">{s.label}</div>
+              <div className="dcl-stat" key={s.label}>
+                <div className="dcl-stat-val">{s.val}</div>
+                <div className="dcl-stat-label">{s.label}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ── Carros disponíveis ──────────────────────────────────── */}
-        <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body p-4">
-            <div className="dc-sh">
-              <div className="dc-sh-left">
-                <div className="dc-sh-icon"><Car size={15} color="#fff" /></div>
-                <span className="dc-sh-title">Carros disponíveis</span>
-                <span className="dc-sh-count">{carrosFiltrados.length}</span>
-              </div>
-              <div className="dc-search">
-                <Search size={14} />
-                <input placeholder="Buscar..." value={busca} onChange={e => setBusca(e.target.value)} />
-              </div>
+        {/* Carros disponíveis */}
+        <div className="dcl-card">
+          <div className="dcl-section-header">
+            <div className="dcl-section-left">
+              <div className="dcl-section-icon"><Car size={14} /></div>
+              <span className="dcl-section-title">Carros disponíveis</span>
+              <span className="dcl-section-count">{carrosFiltrados.length}</span>
             </div>
+            <div className="dcl-search">
+              <Search size={13} className="dcl-search-icon" />
+              <input className="dcl-search-input" placeholder="Buscar marca ou modelo..."
+                value={busca} onChange={e => setBusca(e.target.value)} />
+            </div>
+          </div>
 
-            {carrosFiltrados.length === 0 ? (
-              <p className="text-center text-muted py-4 mb-0 small">Nenhum carro disponível no momento.</p>
-            ) : (
-              <div className="row g-3">
-                {carrosFiltrados.map(c => {
-                  const pal = CAR_PALETTES[paletteIdx[c.id] ?? 0]
-                  return (
-                    <div className="col-sm-6 col-xl-4" key={c.id}>
-                      <div className="car-card-outer">
-                        {/* Top colorido */}
-                        <div className="car-card-top"
-                          style={{ background: `linear-gradient(135deg, ${pal.from}, ${pal.to})` }}>
-                          <div className="car-card-top-glow"
-                            style={{ background: `radial-gradient(circle, ${pal.accent}, transparent)` }} />
-                          <div className="car-plate"
-                            style={{ color: pal.accent, borderColor: pal.accent }}>
-                            {c.placa ?? '---'}
-                          </div>
-                          <p className="car-name">{c.marca}</p>
-                          <p className="car-sub">{c.modelo}</p>
-                          <span className="car-year-pill" style={{ color: pal.accent }}>
-                            {c.ano}
-                          </span>
-                        </div>
-                        {/* Bottom branco */}
-                        <div className="car-card-bottom">
-                          <div className="car-meta">
-                            <div className="car-meta-item"><Fuel size={11} /> Flex</div>
-                            <div className="car-meta-item"><Gauge size={11} /> 0 km</div>
-                          </div>
-                          <button className="btn-solicitar"
-                            style={{ background: `linear-gradient(135deg, ${pal.from}, ${pal.to})` }}
-                            onClick={() => abrirModal(c)}>
-                            <PlusCircle size={13} /> Solicitar aluguel
-                          </button>
-                        </div>
+          {carrosFiltrados.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#4a5270', padding: '32px 0', margin: 0, fontSize: 13 }}>
+              Nenhum carro disponível no momento.
+            </p>
+          ) : (
+            <div className="dcl-car-grid">
+              {carrosFiltrados.map(c => {
+                const pal = CAR_PALETTES[paletteIdx[c.id] ?? 0]
+                return (
+                  <div className="dcl-car-card" key={c.id}>
+                    <div className="dcl-car-top" style={{ background: pal.top }}>
+                      <div className="dcl-car-glow"
+                        style={{ background: `radial-gradient(circle, ${pal.glow}, transparent)` }} />
+                      <div className="dcl-car-plate" style={{ color: pal.accent, borderColor: pal.accent }}>
+                        {c.placa ?? '---'}
                       </div>
+                      <p className="dcl-car-brand">{c.marca}</p>
+                      <p className="dcl-car-model">{c.modelo}</p>
+                      <span className="dcl-car-year" style={{ color: pal.accent }}>{c.ano}</span>
                     </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Meus pedidos ───────────────────────────────────────── */}
-        <div className="card border-0 shadow-sm">
-          <div className="card-body p-4">
-            <div className="dc-sh mb-4">
-              <div className="dc-sh-left">
-                <div className="dc-sh-icon"><ClipboardList size={15} color="#fff" /></div>
-                <span className="dc-sh-title">Meus pedidos</span>
-                <span className="dc-sh-count">{pedidos.length}</span>
-              </div>
-            </div>
-
-            {pedidos.length === 0 ? (
-              <p className="text-center text-muted py-3 mb-0 small">Você ainda não fez nenhum pedido.</p>
-            ) : (
-              <div className="dc-table-wrap">
-                <table className="dc-table">
-                  <thead>
-                    <tr>
-                      {['Veículo', 'Retirada', 'Devolução', 'Duração', 'Status'].map(h => (
-                        <th key={h}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pedidos.map(p => {
-                      const s = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.Cancelado
-                      return (
-                        <tr key={p.id}>
-                          <td style={{ fontWeight: 600 }}>{p.carro}</td>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
-                              <CalendarDays size={12} color="#6366f1" /> {p.dataInicio}
-                            </div>
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
-                              <CalendarDays size={12} color="#6366f1" /> {p.dataFim}
-                            </div>
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
-                              <Clock size={12} color="#6366f1" /> {p.dias}d
-                            </div>
-                          </td>
-                          <td>
-                            <span className="dc-status-pill"
-                              style={{ background: s.bg, color: s.color }}>
-                              <span className="dc-status-dot" style={{ background: s.dot }} />
-                              {s.label}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Modal ──────────────────────────────────────────────── */}
-        {modalAberto && (
-          <div className="dc-modal-overlay" onClick={fecharModal}>
-            <div className="dc-modal" onClick={e => e.stopPropagation()}>
-              <div className="dc-modal-header">
-                <div>
-                  <div className="dc-modal-car-tag">
-                    <Car size={11} /> {carroSelecionado?.marca} {carroSelecionado?.modelo}
+                    <div className="dcl-car-bottom">
+                      <div className="dcl-car-meta">
+                        <div className="dcl-car-meta-item"><Fuel size={11} color={pal.accent} /> Flex</div>
+                        <div className="dcl-car-meta-item"><Gauge size={11} color={pal.accent} /> 0 km</div>
+                        <div className="dcl-car-meta-item"><Zap size={11} color={pal.accent} /> Disponível</div>
+                      </div>
+                      <button className="dcl-btn-solicitar"
+                        style={{ background: `linear-gradient(135deg, ${pal.accent}22, ${pal.accent}11)`, border: `1px solid ${pal.accent}44`, color: pal.accent }}
+                        onClick={() => abrirModal(c)}>
+                        <PlusCircle size={13} /> Solicitar aluguel
+                      </button>
+                    </div>
                   </div>
-                  <h5 className="dc-modal-title">Solicitar aluguel</h5>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Meus pedidos */}
+        <div className="dcl-card">
+          <div className="dcl-section-header">
+            <div className="dcl-section-left">
+              <div className="dcl-section-icon"><ClipboardList size={14} /></div>
+              <span className="dcl-section-title">Meus pedidos</span>
+              <span className="dcl-section-count">{pedidos.length}</span>
+            </div>
+          </div>
+
+          {pedidos.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#4a5270', padding: '32px 0', margin: 0, fontSize: 13 }}>
+              Você ainda não fez nenhum pedido.
+            </p>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    {['Veículo', 'Retirada', 'Devolução', 'Duração', 'Status'].map(h => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pedidos.map(p => {
+                    const s = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.Cancelado
+                    return (
+                      <tr key={p.id}>
+                        <td style={{ fontWeight: 600 }}>{p.carro}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#8b94b0', fontSize: 12.5 }}>
+                            <CalendarDays size={11} color="#e8a43b" /> {p.dataInicio}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#8b94b0', fontSize: 12.5 }}>
+                            <CalendarDays size={11} color="#e8a43b" /> {p.dataFim}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#8b94b0', fontSize: 12.5 }}>
+                            <Clock size={11} color="#e8a43b" /> {p.dias}d
+                          </div>
+                        </td>
+                        <td>
+                          <span className="dcl-status-pill" style={{ background: s.bg, color: s.color }}>
+                            <span className="dcl-status-dot" style={{ background: s.dot }} />
+                            {s.label}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Modal */}
+        {modalAberto && (
+          <div className="dcl-modal-overlay" onClick={fecharModal}>
+            <div className="dcl-modal" onClick={e => e.stopPropagation()}>
+              <div className="dcl-modal-header">
+                <div>
+                  <div className="dcl-modal-car-tag">
+                    <Car size={10} /> {carroSelecionado?.marca} {carroSelecionado?.modelo}
+                  </div>
+                  <h5 className="dcl-modal-title">Solicitar aluguel</h5>
                 </div>
-                <button className="dc-modal-close" onClick={fecharModal}>✕</button>
+                <button className="dcl-modal-close" onClick={fecharModal}>✕</button>
               </div>
 
-              <div className="dc-modal-body">
-                <div className="dc-date-group">
+              <div className="dcl-modal-body">
+                <div className="dcl-date-row">
                   <div>
-                    <div className="dc-date-label">Retirada</div>
-                    <input type="date" className="dc-date-input"
+                    <span className="dcl-date-label">Retirada</span>
+                    <input type="date" className="dcl-date-input"
                       value={dataInicio}
                       min={new Date().toISOString().split('T')[0]}
                       onChange={e => { setDataInicio(e.target.value); setErroModal('') }} />
                   </div>
                   <div>
-                    <div className="dc-date-label">Devolução</div>
-                    <input type="date" className="dc-date-input"
+                    <span className="dcl-date-label">Devolução</span>
+                    <input type="date" className="dcl-date-input"
                       value={dataFim}
                       min={dataInicio || new Date().toISOString().split('T')[0]}
                       onChange={e => { setDataFim(e.target.value); setErroModal('') }} />
@@ -552,36 +660,30 @@ export default function DashboardCliente({ usuario }) {
                 </div>
 
                 {dias > 0 && (
-                  <div className="dc-duration-card">
+                  <div className="dcl-duration-card">
                     <div>
-                      <div className="dc-duration-label">Duração do aluguel</div>
-                      <div className="dc-duration-val">{dias} dia{dias > 1 ? 's' : ''}</div>
+                      <div className="dcl-dur-label">Duração do aluguel</div>
+                      <div className="dcl-dur-val">{dias} dia{dias > 1 ? 's' : ''}</div>
                     </div>
-                    <Clock size={28} color="rgba(255,255,255,0.3)" />
+                    <Clock size={26} color="rgba(232,164,59,0.3)" />
                   </div>
                 )}
 
-                {erroModal && (
-                  <div style={{ marginTop: 12, padding: '8px 12px', background: '#fff1f2',
-                    border: '1px solid #fecdd3', borderRadius: 8, fontSize: 13, color: '#e11d48' }}>
-                    {erroModal}
-                  </div>
-                )}
+                {erroModal && <div className="dcl-modal-error">{erroModal}</div>}
               </div>
 
-              <div className="dc-modal-footer">
-                <button className="dc-btn-cancel" onClick={fecharModal}>Cancelar</button>
-                <button className="dc-btn-confirm" onClick={handleSolicitarAluguel} disabled={enviando}>
+              <div className="dcl-modal-footer">
+                <button className="dcl-btn-cancel" onClick={fecharModal}>Cancelar</button>
+                <button className="dcl-btn-confirm" onClick={handleSolicitarAluguel} disabled={enviando}>
                   {enviando
-                    ? <span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14 }} />
-                    : <PlusCircle size={14} />}
+                    ? <span className="spinner-border spinner-border-sm" style={{ width: 13, height: 13 }} />
+                    : <PlusCircle size={13} />}
                   {enviando ? 'Enviando...' : 'Confirmar pedido'}
                 </button>
               </div>
             </div>
           </div>
         )}
-
       </div>
     </>
   )

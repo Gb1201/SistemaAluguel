@@ -1,31 +1,42 @@
 import { useNavigate } from 'react-router-dom'
-import { Car, Shield, ClipboardList, Users, CheckCircle, ArrowRight } from 'lucide-react'
+import { Car, Shield, ClipboardList, Users, CheckCircle, ArrowRight, Zap } from 'lucide-react'
 
 const funcionalidades = [
   {
-    icon: <Users size={22} color="#4f6ef7" />,
+    icon: <Users size={20} />,
     titulo: 'Cadastro de Clientes',
-    descricao: 'Clientes podem criar sua conta com dados pessoais e rendimentos diretamente pelo sistema.',
+    descricao: 'Crie sua conta com dados pessoais e rendimentos em segundos. Processo simples e seguro.',
+    tag: 'Onboarding',
   },
   {
-    icon: <Car size={22} color="#4f6ef7" />,
+    icon: <Car size={20} />,
     titulo: 'Frota de Veículos',
-    descricao: 'Agentes cadastram e gerenciam os automóveis disponíveis para aluguel na plataforma.',
+    descricao: 'Agentes gerenciam a frota disponível em tempo real, com cadastro rápido e controle total.',
+    tag: 'Gestão',
   },
   {
-    icon: <ClipboardList size={22} color="#4f6ef7" />,
+    icon: <ClipboardList size={20} />,
     titulo: 'Pedidos de Aluguel',
-    descricao: 'Clientes solicitam aluguéis escolhendo o carro e o período desejado com poucos cliques.',
+    descricao: 'Solicite aluguéis escolhendo o carro e período desejado, tudo com poucos cliques.',
+    tag: 'Reservas',
   },
   {
-    icon: <CheckCircle size={22} color="#4f6ef7" />,
+    icon: <CheckCircle size={20} />,
     titulo: 'Aprovação pelo Agente',
-    descricao: 'Agentes analisam e aprovam ou reprovam cada pedido, mantendo controle total da operação.',
+    descricao: 'Agentes analisam e aprovam pedidos em tempo real, mantendo o controle da operação.',
+    tag: 'Workflow',
   },
   {
-    icon: <Shield size={22} color="#4f6ef7" />,
+    icon: <Shield size={20} />,
     titulo: 'Acesso por Perfil',
-    descricao: 'Sistema com dois perfis distintos: cliente e agente, cada um com sua tela personalizada.',
+    descricao: 'Dois perfis distintos — cliente e agente — cada um com painel personalizado e seguro.',
+    tag: 'Segurança',
+  },
+  {
+    icon: <Zap size={20} />,
+    titulo: 'Tempo Real',
+    descricao: 'Disponibilidade de veículos e status de pedidos atualizados instantaneamente no sistema.',
+    tag: 'Performance',
   },
 ]
 
@@ -35,223 +46,342 @@ export default function Home() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-        .home-root {
+        .hm-root {
           min-height: 100vh;
-          background: #f4f5f9;
-          font-family: 'DM Sans', sans-serif;
+          background: #06080e;
+          font-family: 'Sora', sans-serif;
+          color: #f0f2f8;
+          overflow-x: hidden;
         }
-        .home-navbar {
-          background: #fff;
-          border-bottom: 1px solid #e8eaf0;
-          padding: 0 40px;
-          height: 60px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          position: sticky;
-          top: 0;
-          z-index: 100;
+
+        /* ── Navbar ── */
+        .hm-nav {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 0 56px;
+          height: 64px;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+          position: sticky; top: 0; z-index: 100;
+          background: rgba(6,8,14,0.85);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
         }
-        .home-logo {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          font-size: 17px;
-          font-weight: 700;
-          color: #1a1d2e;
+
+        .hm-nav-logo {
+          display: flex; align-items: center; gap: 12px;
           text-decoration: none;
         }
-        .home-logo-icon {
-          width: 34px; height: 34px;
-          background: #4f6ef7;
-          border-radius: 8px;
+        .hm-nav-logo-icon {
+          width: 36px; height: 36px;
+          background: linear-gradient(135deg, #e8a43b, #c27f22);
+          border-radius: 9px;
           display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 4px 16px rgba(232,164,59,0.4);
         }
-        .btn-entrar {
-          background: #4f6ef7;
-          color: #fff;
-          border: none;
-          border-radius: 8px;
-          padding: 8px 20px;
-          font-size: 13.5px;
-          font-weight: 500;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          transition: background 0.15s, transform 0.1s;
+        .hm-nav-logo-text {
+          font-family: 'Playfair Display', serif;
+          font-size: 17px; font-weight: 600;
+          color: #f0f2f8;
         }
-        .btn-entrar:hover { background: #3a57e0; transform: translateY(-1px); }
-        .home-hero {
-          background: linear-gradient(135deg, #1e2540 0%, #0f1117 100%);
-          padding: 80px 40px;
+        .hm-nav-badge {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 9px; font-weight: 500;
+          background: rgba(232,164,59,0.12);
+          border: 1px solid rgba(232,164,59,0.25);
+          color: #e8a43b;
+          padding: 2px 8px; border-radius: 20px;
+          letter-spacing: 0.5px;
+        }
+        .hm-btn-nav {
+          display: flex; align-items: center; gap: 8px;
+          padding: 9px 22px;
+          background: linear-gradient(135deg, #e8a43b, #c27f22);
+          border: none; border-radius: 9px;
+          font-family: 'Sora', sans-serif;
+          font-size: 13px; font-weight: 600;
+          color: #000; cursor: pointer;
+          box-shadow: 0 4px 16px rgba(232,164,59,0.3);
+          transition: all 0.2s;
+          letter-spacing: 0.2px;
+        }
+        .hm-btn-nav:hover {
+          box-shadow: 0 6px 24px rgba(232,164,59,0.5);
+          transform: translateY(-1px);
+        }
+
+        /* ── Hero ── */
+        .hm-hero {
+          position: relative;
+          padding: 110px 56px 100px;
+          text-align: center;
+          overflow: hidden;
+        }
+
+        /* Background grid */
+        .hm-hero::before {
+          content: '';
+          position: absolute; inset: 0;
+          background-image:
+            linear-gradient(rgba(232,164,59,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(232,164,59,0.04) 1px, transparent 1px);
+          background-size: 60px 60px;
+          mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 100%);
+          pointer-events: none;
+        }
+
+        /* Orb */
+        .hm-hero-orb {
+          position: absolute;
+          top: -120px; left: 50%; transform: translateX(-50%);
+          width: 700px; height: 400px;
+          background: radial-gradient(ellipse, rgba(232,164,59,0.14) 0%, rgba(232,100,59,0.06) 40%, transparent 70%);
+          pointer-events: none;
+          border-radius: 50%;
+        }
+
+        .hm-hero-eyebrow {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: rgba(232,164,59,0.08);
+          border: 1px solid rgba(232,164,59,0.2);
+          color: #e8a43b;
+          font-size: 11.5px; font-weight: 600;
+          padding: 5px 14px; border-radius: 20px;
+          margin-bottom: 28px;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+        }
+
+        .hm-hero h1 {
+          font-family: 'Playfair Display', serif;
+          font-size: clamp(48px, 7vw, 78px);
+          font-weight: 700;
+          line-height: 1.08;
+          letter-spacing: -1.5px;
+          margin: 0 0 24px;
+          color: #f0f2f8;
+        }
+        .hm-hero h1 em {
+          font-style: italic;
+          color: #e8a43b;
+        }
+        .hm-hero-sub {
+          font-size: 16px;
+          color: #8b94b0;
+          max-width: 540px;
+          margin: 0 auto 44px;
+          line-height: 1.75;
+          font-weight: 300;
+        }
+
+        .hm-hero-cta {
+          display: inline-flex; align-items: center; gap: 10px;
+          padding: 15px 36px;
+          background: linear-gradient(135deg, #e8a43b, #c27f22);
+          border: none; border-radius: 12px;
+          font-family: 'Sora', sans-serif;
+          font-size: 15px; font-weight: 700;
+          color: #000; cursor: pointer;
+          box-shadow: 0 8px 32px rgba(232,164,59,0.4);
+          transition: all 0.22s;
+          letter-spacing: 0.3px;
+        }
+        .hm-hero-cta:hover {
+          box-shadow: 0 14px 48px rgba(232,164,59,0.6);
+          transform: translateY(-3px);
+        }
+
+        .hm-hero-stats {
+          display: flex; align-items: center; justify-content: center;
+          gap: 40px; margin-top: 64px;
+          padding-top: 40px;
+          border-top: 1px solid rgba(255,255,255,0.05);
+          flex-wrap: wrap;
+        }
+        .hm-stat-item { text-align: center; }
+        .hm-stat-num {
+          font-family: 'Playfair Display', serif;
+          font-size: 36px; font-weight: 700;
+          color: #e8a43b; line-height: 1;
+        }
+        .hm-stat-label { font-size: 12px; color: #4a5270; margin-top: 5px; letter-spacing: 0.5px; }
+        .hm-stat-sep { width: 1px; height: 40px; background: rgba(255,255,255,0.07); }
+
+        /* ── Features ── */
+        .hm-features {
+          padding: 80px 56px;
+          max-width: 1160px;
+          margin: 0 auto;
+        }
+
+        .hm-feat-header {
+          text-align: center; margin-bottom: 52px;
+        }
+        .hm-feat-pre {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 10.5px; font-weight: 500;
+          color: #e8a43b; letter-spacing: 2px;
+          text-transform: uppercase; margin-bottom: 12px;
+        }
+        .hm-feat-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 36px; font-weight: 700;
+          color: #f0f2f8; margin-bottom: 10px;
+          letter-spacing: -0.5px;
+        }
+        .hm-feat-sub { font-size: 14px; color: #4a5270; font-weight: 300; }
+
+        .hm-feat-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 18px;
+        }
+
+        .hm-feat-card {
+          background: #0d1018;
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 16px;
+          padding: 28px;
+          transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+          position: relative;
+          overflow: hidden;
+        }
+        .hm-feat-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(232,164,59,0.3), transparent);
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+        .hm-feat-card:hover {
+          border-color: rgba(232,164,59,0.2);
+          box-shadow: 0 8px 40px rgba(232,164,59,0.08);
+          transform: translateY(-4px);
+        }
+        .hm-feat-card:hover::before { opacity: 1; }
+
+        .hm-feat-icon-wrap {
+          width: 42px; height: 42px;
+          background: rgba(232,164,59,0.1);
+          border: 1px solid rgba(232,164,59,0.2);
+          border-radius: 10px;
+          display: flex; align-items: center; justify-content: center;
+          color: #e8a43b;
+          margin-bottom: 16px;
+        }
+        .hm-feat-tag {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 9.5px; font-weight: 500;
+          color: #4a5270; letter-spacing: 1px;
+          text-transform: uppercase;
+          margin-bottom: 8px; display: block;
+        }
+        .hm-feat-card h3 { font-size: 14px; font-weight: 600; color: #f0f2f8; margin: 0 0 8px; }
+        .hm-feat-card p { font-size: 13px; color: #4a5270; line-height: 1.65; margin: 0; font-weight: 300; }
+
+        /* ── CTA Banner ── */
+        .hm-cta-band {
+          margin: 0 56px 80px;
+          background: linear-gradient(135deg, #1a1400, #12100a);
+          border: 1px solid rgba(232,164,59,0.2);
+          border-radius: 20px;
+          padding: 52px;
           text-align: center;
           position: relative;
           overflow: hidden;
         }
-        .home-hero::before {
+        .hm-cta-band::before {
           content: '';
-          position: absolute;
-          top: -80px; left: 50%;
-          transform: translateX(-50%);
-          width: 600px; height: 300px;
-          background: radial-gradient(ellipse, rgba(79,110,247,0.25) 0%, transparent 70%);
+          position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+          width: 400px; height: 200px;
+          background: radial-gradient(ellipse, rgba(232,164,59,0.1) 0%, transparent 70%);
+          pointer-events: none;
         }
-        .home-hero-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(79,110,247,0.15);
-          border: 1px solid rgba(79,110,247,0.3);
-          color: #a5b4fc;
-          padding: 4px 14px;
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: 500;
-          margin-bottom: 20px;
+        .hm-cta-band h2 {
+          font-family: 'Playfair Display', serif;
+          font-size: 30px; font-weight: 700;
+          color: #f0f2f8; margin-bottom: 10px;
         }
-        .home-hero h1 {
-          font-family: 'Rajdhani', sans-serif;
-          font-size: 58px;
-          font-weight: 700;
-          color: #fff;
-          line-height: 1.1;
-          margin: 0 0 16px;
-          letter-spacing: 0px;
-        }
-        .home-hero h1 span { color: #6c8ef7; }
-        .home-hero p {
-          font-size: 16px;
-          color: #8b92a8;
-          max-width: 520px;
-          margin: 0 auto 32px;
-          line-height: 1.7;
-        }
-        .btn-hero-cta {
-          background: #4f6ef7;
-          color: #fff;
-          border: none;
-          border-radius: 10px;
-          padding: 13px 28px;
-          font-size: 15px;
-          font-weight: 600;
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
-          box-shadow: 0 4px 20px rgba(79,110,247,0.4);
-        }
-        .btn-hero-cta:hover {
-          background: #3a57e0;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 30px rgba(79,110,247,0.5);
-        }
-        .home-features {
-          padding: 64px 40px;
-          max-width: 1100px;
-          margin: 0 auto;
-        }
-        .home-features-title {
-          text-align: center;
-          font-size: 28px;
-          font-weight: 700;
-          color: #1a1d2e;
-          margin-bottom: 8px;
-          letter-spacing: -0.5px;
-        }
-        .home-features-sub {
-          text-align: center;
-          color: #6b7280;
-          font-size: 14px;
-          margin-bottom: 40px;
-        }
-        .feature-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 20px;
-        }
-        .feature-card {
-          background: #fff;
-          border: 1px solid #e8eaf0;
-          border-radius: 14px;
-          padding: 24px;
-          transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
-        }
-        .feature-card:hover {
-          box-shadow: 0 6px 24px rgba(79,110,247,0.1);
-          border-color: #c5cffa;
-          transform: translateY(-3px);
-        }
-        .feature-icon {
-          width: 44px; height: 44px;
-          background: #eef1ff;
-          border-radius: 10px;
-          display: flex; align-items: center; justify-content: center;
-          margin-bottom: 14px;
-        }
-        .feature-card h3 {
-          font-size: 14px;
-          font-weight: 600;
-          color: #1a1d2e;
-          margin: 0 0 8px;
-        }
-        .feature-card p {
-          font-size: 13px;
-          color: #6b7280;
-          line-height: 1.6;
-          margin: 0;
-        }
-        .home-footer {
-          text-align: center;
-          padding: 28px;
-          border-top: 1px solid #e8eaf0;
-          font-size: 12px;
-          color: #9ca3af;
-          background: #fff;
+        .hm-cta-band p { font-size: 14px; color: #4a5270; margin-bottom: 28px; font-weight: 300; }
+
+        /* ── Footer ── */
+        .hm-footer {
+          text-align: center; padding: 28px;
+          border-top: 1px solid rgba(255,255,255,0.05);
+          font-size: 12px; color: #2e3450;
+          background: #06080e;
         }
       `}</style>
 
-      <div className="home-root">
-
+      <div className="hm-root">
         {/* Navbar */}
-        <nav className="home-navbar">
-          <div className="home-logo">
-            <div className="home-logo-icon">
-              <Car size={18} color="#fff" />
+        <nav className="hm-nav">
+          <div className="hm-nav-logo">
+            <div className="hm-nav-logo-icon">
+              <Car size={18} color="#000" strokeWidth={2.2} />
             </div>
-             AlugaFácil
+            <span className="hm-nav-logo-text">AlugaFácil</span>
+            <span className="hm-nav-badge">v2.0</span>
           </div>
-          <button className="btn-entrar" onClick={() => navigate('/login')}>
+          <button className="hm-btn-nav" onClick={() => navigate('/login')}>
             Entrar <ArrowRight size={14} />
           </button>
         </nav>
 
         {/* Hero */}
-        <section className="home-hero">
-          <div className="home-hero-badge">
-            <Car size={12} /> Sistema de Aluguel de Veículos
+        <section className="hm-hero">
+          <div className="hm-hero-orb" />
+          <div className="hm-hero-eyebrow">
+            <Car size={11} /> Sistema de Locação de Veículos
           </div>
-          <h1>Alugue com <span>facilidade</span>,<br />gerencie com controle</h1>
-          <p>
-            Plataforma completa para locação de automóveis, do cadastro do cliente
-            à aprovação do pedido pelo agente, tudo em um só lugar.
+          <h1>
+            Alugue com <em>elegância</em>,<br />
+            gerencie com precisão
+          </h1>
+          <p className="hm-hero-sub">
+            Plataforma premium para locação de automóveis. Do cadastro do cliente
+            à aprovação pelo agente — tudo centralizado, tudo em tempo real.
           </p>
-          <button className="btn-hero-cta" onClick={() => navigate('/login')}>
+          <button className="hm-hero-cta" onClick={() => navigate('/login')}>
             Começar agora <ArrowRight size={16} />
           </button>
+
+          <div className="hm-hero-stats">
+            {[
+              { num: '100%', label: 'DIGITAL'    },
+              null,
+              { num: '2',    label: 'PERFIS'      },
+              null,
+              { num: '∞',    label: 'VEÍCULOS'    },
+              null,
+              { num: '24/7', label: 'DISPONÍVEL'  },
+            ].map((s, i) =>
+              s === null
+                ? <div key={i} className="hm-stat-sep" />
+                : (
+                  <div key={i} className="hm-stat-item">
+                    <div className="hm-stat-num">{s.num}</div>
+                    <div className="hm-stat-label">{s.label}</div>
+                  </div>
+                )
+            )}
+          </div>
         </section>
 
-        {/* Funcionalidades */}
-        <section className="home-features">
-          <h2 className="home-features-title">Tudo que você precisa</h2>
-          <p className="home-features-sub">Funcionalidades pensadas para clientes e agentes</p>
-          <div className="feature-grid">
+        {/* Features */}
+        <section className="hm-features">
+          <div className="hm-feat-header">
+            <p className="hm-feat-pre">Funcionalidades</p>
+            <h2 className="hm-feat-title">Tudo que você precisa</h2>
+            <p className="hm-feat-sub">Pensado para clientes e agentes, do primeiro acesso ao controle total</p>
+          </div>
+          <div className="hm-feat-grid">
             {funcionalidades.map((f, i) => (
-              <div className="feature-card" key={i}>
-                <div className="feature-icon">{f.icon}</div>
+              <div key={i} className="hm-feat-card">
+                <div className="hm-feat-icon-wrap">{f.icon}</div>
+                <span className="hm-feat-tag">{f.tag}</span>
                 <h3>{f.titulo}</h3>
                 <p>{f.descricao}</p>
               </div>
@@ -259,11 +389,19 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="home-footer">
+        {/* CTA Band */}
+        <div className="hm-cta-band">
+          <h2>Pronto para começar?</h2>
+          <p>Crie sua conta em menos de 2 minutos e acesse a plataforma.</p>
+          <button className="hm-hero-cta" style={{ fontSize: 14, padding: '13px 30px' }}
+            onClick={() => navigate('/cadastro')}>
+            Criar conta grátis <ArrowRight size={15} />
+          </button>
+        </div>
+
+        <footer className="hm-footer">
           © {new Date().getFullYear()} AlugaFácil — Sistema de Locação de Veículos
         </footer>
-
       </div>
     </>
   )

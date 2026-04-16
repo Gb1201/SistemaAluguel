@@ -1,24 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Save, ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { Save, ArrowLeft, Plus, Trash2, Car, DollarSign } from 'lucide-react'
 
 const API = 'http://localhost:8080/clientes'
-
-const formVazio = {
-  nome:      '',
-  email:     '',
-  senha:     '',
-  rg:        '',
-  cpf:       '',
-  endereco:  '',
-  profissao: '',
-}
-
+const formVazio = { nome: '', email: '', senha: '', rg: '', cpf: '', endereco: '', profissao: '' }
 const rendimentoVazio = { entidadeEmpregadora: '', valor: '' }
 
 export default function CadastroCliente() {
   const navigate = useNavigate()
-
   const [form, setForm]               = useState(formVazio)
   const [rendimentos, setRendimentos] = useState([{ ...rendimentoVazio }])
   const [erros, setErros]             = useState({})
@@ -33,14 +22,11 @@ export default function CadastroCliente() {
 
   const handleRendimentoChange = (index, e) => {
     const { name, value } = e.target
-    setRendimentos(prev =>
-      prev.map((r, i) => i === index ? { ...r, [name]: value } : r)
-    )
+    setRendimentos(prev => prev.map((r, i) => i === index ? { ...r, [name]: value } : r))
   }
 
   const adicionarRendimento = () => {
-    if (rendimentos.length < 3)
-      setRendimentos(prev => [...prev, { ...rendimentoVazio }])
+    if (rendimentos.length < 3) setRendimentos(prev => [...prev, { ...rendimentoVazio }])
   }
 
   const removerRendimento = (index) => {
@@ -54,34 +40,29 @@ export default function CadastroCliente() {
     if (!form.email.trim()) novosErros.email = 'E-mail é obrigatório.'
     if (!form.senha.trim()) novosErros.senha = 'Senha é obrigatória.'
     if (form.senha.length > 0 && form.senha.length < 6)
-      novosErros.senha = 'Senha deve ter pelo menos 6 caracteres.'
-    if (!form.cpf.trim())   novosErros.cpf   = 'CPF é obrigatório.'
-
+      novosErros.senha = 'Mínimo 6 caracteres.'
+    if (!form.cpf.trim()) novosErros.cpf = 'CPF é obrigatório.'
     rendimentos.forEach((r, i) => {
-      const temEntidade = r.entidadeEmpregadora.trim() !== ''
-      const temValor    = r.valor !== '' && r.valor !== null
-      if (temEntidade && !temValor)  novosErros[`rendimento_valor_${i}`]    = 'Informe o valor.'
-      if (!temEntidade && temValor)  novosErros[`rendimento_entidade_${i}`] = 'Informe a entidade.'
+      const temE = r.entidadeEmpregadora.trim() !== ''
+      const temV = r.valor !== '' && r.valor !== null
+      if (temE && !temV)  novosErros[`rendimento_valor_${i}`]    = 'Informe o valor.'
+      if (!temE && temV)  novosErros[`rendimento_entidade_${i}`] = 'Informe a entidade.'
     })
-
     setErros(novosErros)
     return Object.keys(novosErros).length === 0
   }
 
   const handleSalvar = async () => {
     if (!validar()) return
-    setSalvando(true)
-    setErroApi('')
-
+    setSalvando(true); setErroApi('')
     const rendimentosValidos = rendimentos.filter(
       r => r.entidadeEmpregadora.trim() !== '' && r.valor !== ''
     )
-
     try {
       const response = await fetch(API, {
-        method:  'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ ...form, rendimentos: rendimentosValidos }),
+        body: JSON.stringify({ ...form, rendimentos: rendimentosValidos }),
       })
       if (!response.ok) {
         const msg = await response.text()
@@ -96,144 +77,377 @@ export default function CadastroCliente() {
   }
 
   return (
-    <div className="d-flex justify-content-center py-5 px-3" style={{ background: '#f4f5f9', minHeight: '100vh' }}>
-      <div style={{ width: '100%', maxWidth: 640 }}>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-        <div className="d-flex align-items-center gap-3 mb-4">
-          <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
-            onClick={() => navigate('/login')} disabled={salvando}>
-            <ArrowLeft size={14} /> Voltar ao login
-          </button>
-          <h4 className="mb-0 fw-semibold">Criar conta</h4>
-        </div>
+        .cc-root {
+          min-height: 100vh;
+          background: #06080e;
+          font-family: 'Sora', sans-serif;
+          color: #f0f2f8;
+          padding: 48px 24px;
+          -webkit-font-smoothing: antialiased;
+        }
 
-        <div className="card shadow-sm border-0">
-          <div className="card-body p-4">
-            <div className="row g-3">
+        .cc-wrap { max-width: 680px; margin: 0 auto; }
 
-              {/* Nome */}
-              <div className="col-12">
-                <label className="form-label fw-medium">Nome completo <span className="text-danger">*</span></label>
-                <input type="text" name="nome"
-                  className={`form-control ${erros.nome ? 'is-invalid' : ''}`}
-                  placeholder="Ex: João da Silva" value={form.nome} onChange={handleChange} />
-                {erros.nome && <div className="invalid-feedback">{erros.nome}</div>}
+        .cc-top {
+          display: flex; align-items: center; gap: 16px;
+          margin-bottom: 36px;
+        }
+        .cc-back-btn {
+          display: flex; align-items: center; gap: 7px;
+          padding: 8px 14px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 9px;
+          color: #8b94b0; font-size: 13px; font-weight: 500;
+          cursor: pointer; font-family: 'Sora', sans-serif;
+          transition: all 0.15s;
+          flex-shrink: 0;
+        }
+        .cc-back-btn:hover {
+          background: rgba(232,164,59,0.06);
+          border-color: rgba(232,164,59,0.2);
+          color: #e8a43b;
+        }
+        .cc-page-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 22px; font-weight: 700;
+          color: #f0f2f8; letter-spacing: -0.3px;
+        }
+
+        .cc-card {
+          background: #0d1018;
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 4px 40px rgba(0,0,0,0.4);
+        }
+
+        .cc-section-header {
+          padding: 22px 28px 0;
+          display: flex; align-items: center; gap: 10px;
+          margin-bottom: 20px;
+        }
+        .cc-section-icon {
+          width: 30px; height: 30px;
+          background: rgba(232,164,59,0.1);
+          border: 1px solid rgba(232,164,59,0.2);
+          border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          color: #e8a43b;
+        }
+        .cc-section-title {
+          font-size: 12px; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 1px;
+          color: #4a5270;
+        }
+
+        .cc-body { padding: 0 28px 28px; }
+
+        .cc-grid { display: grid; gap: 16px; }
+        .cc-grid-2 { grid-template-columns: 1fr 1fr; }
+        .cc-grid-1 { grid-template-columns: 1fr; }
+
+        .cc-field {}
+        .cc-label {
+          display: block;
+          font-size: 11.5px; font-weight: 600;
+          color: #8b94b0; margin-bottom: 7px;
+          text-transform: uppercase; letter-spacing: 0.7px;
+        }
+        .cc-label-req { color: #e8a43b; margin-left: 3px; }
+
+        .cc-input {
+          width: 100%; padding: 11px 14px;
+          background: #111520;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 9px;
+          color: #f0f2f8;
+          font-family: 'Sora', sans-serif;
+          font-size: 13.5px;
+          outline: none;
+          transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+        }
+        .cc-input::placeholder { color: #2e3450; }
+        .cc-input:focus {
+          border-color: rgba(232,164,59,0.45);
+          box-shadow: 0 0 0 3px rgba(232,164,59,0.08);
+          background: #131826;
+        }
+        .cc-input-error { border-color: rgba(245,84,106,0.5) !important; }
+        .cc-err-msg { font-size: 11.5px; color: #f9a0af; margin-top: 5px; }
+
+        /* ── Divider ── */
+        .cc-divider {
+          height: 1px;
+          background: rgba(255,255,255,0.05);
+          margin: 24px 0;
+        }
+
+        /* ── Rendimentos ── */
+        .cc-rend-header {
+          display: flex; align-items: center; justify-content: space-between;
+          margin-bottom: 14px;
+        }
+        .cc-rend-label {
+          display: flex; align-items: center; gap: 8px;
+        }
+        .cc-rend-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #4a5270; }
+        .cc-rend-count {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 10px; color: #e8a43b;
+          background: rgba(232,164,59,0.1);
+          border: 1px solid rgba(232,164,59,0.2);
+          padding: 1px 7px; border-radius: 20px;
+        }
+        .cc-add-btn {
+          display: flex; align-items: center; gap: 6px;
+          padding: 6px 14px;
+          background: rgba(232,164,59,0.08);
+          border: 1px solid rgba(232,164,59,0.2);
+          border-radius: 8px;
+          color: #e8a43b; font-size: 12px; font-weight: 600;
+          cursor: pointer; font-family: 'Sora', sans-serif;
+          transition: all 0.15s;
+        }
+        .cc-add-btn:hover {
+          background: rgba(232,164,59,0.14);
+          border-color: rgba(232,164,59,0.35);
+        }
+
+        .cc-rend-card {
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 12px;
+          padding: 16px;
+          margin-bottom: 10px;
+          position: relative;
+        }
+        .cc-rend-card-header {
+          display: flex; align-items: center; justify-content: space-between;
+          margin-bottom: 12px;
+        }
+        .cc-rend-card-title {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 10.5px; color: #4a5270; font-weight: 500;
+          letter-spacing: 0.5px;
+        }
+        .cc-del-btn {
+          display: flex; align-items: center;
+          background: rgba(245,84,106,0.08);
+          border: 1px solid rgba(245,84,106,0.2);
+          border-radius: 7px;
+          color: #f5546a; padding: 4px 8px;
+          cursor: pointer; transition: all 0.15s;
+        }
+        .cc-del-btn:hover {
+          background: rgba(245,84,106,0.14);
+          border-color: rgba(245,84,106,0.4);
+        }
+
+        /* ── Error banner ── */
+        .cc-api-error {
+          margin: 0 28px 20px;
+          padding: 12px 16px;
+          background: rgba(245,84,106,0.08);
+          border: 1px solid rgba(245,84,106,0.25);
+          border-radius: 10px;
+          font-size: 13px; color: #f9a0af;
+        }
+
+        /* ── Footer ── */
+        .cc-footer {
+          padding: 20px 28px 28px;
+          border-top: 1px solid rgba(255,255,255,0.05);
+          display: flex; align-items: center; justify-content: space-between;
+          gap: 12px;
+        }
+
+        .cc-cancel-btn {
+          padding: 11px 22px;
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 9px;
+          color: #8b94b0; font-size: 13.5px; font-weight: 500;
+          cursor: pointer; font-family: 'Sora', sans-serif;
+          transition: all 0.15s;
+        }
+        .cc-cancel-btn:hover {
+          background: rgba(255,255,255,0.04);
+          color: #f0f2f8;
+        }
+
+        .cc-submit-btn {
+          display: flex; align-items: center; gap: 8px;
+          padding: 11px 28px;
+          background: linear-gradient(135deg, #e8a43b, #c27f22);
+          border: none; border-radius: 9px;
+          color: #000; font-size: 13.5px; font-weight: 700;
+          cursor: pointer; font-family: 'Sora', sans-serif;
+          box-shadow: 0 4px 18px rgba(232,164,59,0.28);
+          transition: all 0.2s;
+          letter-spacing: 0.2px;
+        }
+        .cc-submit-btn:hover:not(:disabled) {
+          box-shadow: 0 8px 28px rgba(232,164,59,0.45);
+          transform: translateY(-1px);
+        }
+        .cc-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        @media (max-width: 600px) {
+          .cc-grid-2 { grid-template-columns: 1fr; }
+        }
+      `}</style>
+
+      <div className="cc-root">
+        <div className="cc-wrap">
+          {/* Top nav */}
+          <div className="cc-top">
+            <button className="cc-back-btn" onClick={() => navigate('/login')} disabled={salvando}>
+              <ArrowLeft size={14} /> Voltar
+            </button>
+            <h1 className="cc-page-title">Criar conta</h1>
+          </div>
+
+          <div className="cc-card">
+            {/* Section: Dados pessoais */}
+            <div className="cc-section-header">
+              <div className="cc-section-icon"><Car size={14} /></div>
+              <span className="cc-section-title">Dados pessoais</span>
+            </div>
+
+            <div className="cc-body">
+              <div className="cc-grid cc-grid-1" style={{ marginBottom: 16 }}>
+                <div className="cc-field">
+                  <label className="cc-label">Nome completo<span className="cc-label-req">*</span></label>
+                  <input className={`cc-input ${erros.nome ? 'cc-input-error' : ''}`}
+                    type="text" name="nome" placeholder="Ex: João da Silva"
+                    value={form.nome} onChange={handleChange} />
+                  {erros.nome && <p className="cc-err-msg">{erros.nome}</p>}
+                </div>
               </div>
 
-              {/* Email e Senha */}
-              <div className="col-md-6">
-                <label className="form-label fw-medium">E-mail <span className="text-danger">*</span></label>
-                <input type="email" name="email"
-                  className={`form-control ${erros.email ? 'is-invalid' : ''}`}
-                  placeholder="seu@email.com" value={form.email} onChange={handleChange} />
-                {erros.email && <div className="invalid-feedback">{erros.email}</div>}
+              <div className="cc-grid cc-grid-2" style={{ marginBottom: 16 }}>
+                <div className="cc-field">
+                  <label className="cc-label">E-mail<span className="cc-label-req">*</span></label>
+                  <input className={`cc-input ${erros.email ? 'cc-input-error' : ''}`}
+                    type="email" name="email" placeholder="seu@email.com"
+                    value={form.email} onChange={handleChange} />
+                  {erros.email && <p className="cc-err-msg">{erros.email}</p>}
+                </div>
+                <div className="cc-field">
+                  <label className="cc-label">Senha<span className="cc-label-req">*</span></label>
+                  <input className={`cc-input ${erros.senha ? 'cc-input-error' : ''}`}
+                    type="password" name="senha" placeholder="Mínimo 6 caracteres"
+                    value={form.senha} onChange={handleChange} />
+                  {erros.senha && <p className="cc-err-msg">{erros.senha}</p>}
+                </div>
               </div>
 
-              <div className="col-md-6">
-                <label className="form-label fw-medium">Senha <span className="text-danger">*</span></label>
-                <input type="password" name="senha"
-                  className={`form-control ${erros.senha ? 'is-invalid' : ''}`}
-                  placeholder="Mínimo 6 caracteres" value={form.senha} onChange={handleChange} />
-                {erros.senha && <div className="invalid-feedback">{erros.senha}</div>}
+              <div className="cc-grid cc-grid-2" style={{ marginBottom: 16 }}>
+                <div className="cc-field">
+                  <label className="cc-label">RG</label>
+                  <input className="cc-input" type="text" name="rg"
+                    placeholder="00.000.000-0" value={form.rg} onChange={handleChange} />
+                </div>
+                <div className="cc-field">
+                  <label className="cc-label">CPF<span className="cc-label-req">*</span></label>
+                  <input className={`cc-input ${erros.cpf ? 'cc-input-error' : ''}`}
+                    type="text" name="cpf" placeholder="000.000.000-00"
+                    value={form.cpf} onChange={handleChange} />
+                  {erros.cpf && <p className="cc-err-msg">{erros.cpf}</p>}
+                </div>
               </div>
 
-              {/* RG e CPF */}
-              <div className="col-md-6">
-                <label className="form-label fw-medium">RG</label>
-                <input type="text" name="rg" className="form-control"
-                  placeholder="00.000.000-0" value={form.rg} onChange={handleChange} />
+              <div className="cc-grid cc-grid-1" style={{ marginBottom: 16 }}>
+                <div className="cc-field">
+                  <label className="cc-label">Endereço</label>
+                  <input className="cc-input" type="text" name="endereco"
+                    placeholder="Ex: Rua Governador Valadares, 123"
+                    value={form.endereco} onChange={handleChange} />
+                </div>
               </div>
 
-              <div className="col-md-6">
-                <label className="form-label fw-medium">CPF <span className="text-danger">*</span></label>
-                <input type="text" name="cpf"
-                  className={`form-control ${erros.cpf ? 'is-invalid' : ''}`}
-                  placeholder="000.000.000-00" value={form.cpf} onChange={handleChange} />
-                {erros.cpf && <div className="invalid-feedback">{erros.cpf}</div>}
+              <div className="cc-grid cc-grid-1">
+                <div className="cc-field">
+                  <label className="cc-label">Profissão</label>
+                  <input className="cc-input" type="text" name="profissao"
+                    placeholder="Ex: Engenheiro, Professor, Autônomo..."
+                    value={form.profissao} onChange={handleChange} />
+                </div>
               </div>
 
-              {/* Endereço */}
-              <div className="col-12">
-                <label className="form-label fw-medium">Endereço</label>
-                <input type="text" name="endereco" className="form-control"
-                  placeholder="Ex: Rua Governador Valadares, 123"
-                  value={form.endereco} onChange={handleChange} />
-              </div>
-
-              {/* Profissão */}
-              <div className="col-12">
-                <label className="form-label fw-medium">Profissão</label>
-                <input type="text" name="profissao" className="form-control"
-                  placeholder="Ex: Engenheiro, Professor, Autônomo..."
-                  value={form.profissao} onChange={handleChange} />
-              </div>
+              {/* Divider */}
+              <div className="cc-divider" />
 
               {/* Rendimentos */}
-              <div className="col-12 mt-2">
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <label className="form-label fw-medium mb-0">
-                    Rendimentos
-                    <span className="text-muted fw-normal ms-1" style={{ fontSize: 12 }}>(máx. 3)</span>
-                  </label>
-                  {rendimentos.length < 3 && (
-                    <button type="button" className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
-                      onClick={adicionarRendimento}>
-                      <Plus size={13} /> Adicionar
-                    </button>
-                  )}
+              <div className="cc-rend-header">
+                <div className="cc-rend-label">
+                  <div className="cc-section-icon" style={{ width: 28, height: 28 }}>
+                    <DollarSign size={13} />
+                  </div>
+                  <span className="cc-rend-title">Rendimentos</span>
+                  <span className="cc-rend-count">{rendimentos.length}/3</span>
                 </div>
-                <div className="d-flex flex-column gap-2">
-                  {rendimentos.map((r, index) => (
-                    <div key={index} className="border rounded p-3" style={{ background: '#f8f9fc' }}>
-                      <div className="d-flex align-items-center justify-content-between mb-2">
-                        <span className="text-muted" style={{ fontSize: 12, fontWeight: 500 }}>Rendimento {index + 1}</span>
-                        <button type="button" className="btn btn-sm btn-outline-danger py-0 px-2 d-flex align-items-center"
-                          onClick={() => removerRendimento(index)}>
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                      <div className="row g-2">
-                        <div className="col-md-7">
-                          <input type="text" name="entidadeEmpregadora"
-                            className={`form-control form-control-sm ${erros[`rendimento_entidade_${index}`] ? 'is-invalid' : ''}`}
-                            placeholder="Entidade empregadora" value={r.entidadeEmpregadora}
-                            onChange={e => handleRendimentoChange(index, e)} />
-                          {erros[`rendimento_entidade_${index}`] &&
-                            <div className="invalid-feedback">{erros[`rendimento_entidade_${index}`]}</div>}
-                        </div>
-                        <div className="col-md-5">
-                          <input type="number" name="valor"
-                            className={`form-control form-control-sm ${erros[`rendimento_valor_${index}`] ? 'is-invalid' : ''}`}
-                            placeholder="Valor (R$)" min="0" step="0.01" value={r.valor}
-                            onChange={e => handleRendimentoChange(index, e)} />
-                          {erros[`rendimento_valor_${index}`] &&
-                            <div className="invalid-feedback">{erros[`rendimento_valor_${index}`]}</div>}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {rendimentos.length < 3 && (
+                  <button className="cc-add-btn" onClick={adicionarRendimento}>
+                    <Plus size={12} /> Adicionar
+                  </button>
+                )}
               </div>
 
+              {rendimentos.map((r, index) => (
+                <div key={index} className="cc-rend-card">
+                  <div className="cc-rend-card-header">
+                    <span className="cc-rend-card-title">RENDIMENTO 0{index + 1}</span>
+                    <button className="cc-del-btn" onClick={() => removerRendimento(index)}>
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                  <div className="cc-grid cc-grid-2">
+                    <div className="cc-field">
+                      <input
+                        className={`cc-input ${erros[`rendimento_entidade_${index}`] ? 'cc-input-error' : ''}`}
+                        type="text" name="entidadeEmpregadora"
+                        placeholder="Entidade empregadora"
+                        value={r.entidadeEmpregadora}
+                        onChange={e => handleRendimentoChange(index, e)} />
+                      {erros[`rendimento_entidade_${index}`] &&
+                        <p className="cc-err-msg">{erros[`rendimento_entidade_${index}`]}</p>}
+                    </div>
+                    <div className="cc-field">
+                      <input
+                        className={`cc-input ${erros[`rendimento_valor_${index}`] ? 'cc-input-error' : ''}`}
+                        type="number" name="valor" placeholder="Valor (R$)"
+                        min="0" step="0.01" value={r.valor}
+                        onChange={e => handleRendimentoChange(index, e)} />
+                      {erros[`rendimento_valor_${index}`] &&
+                        <p className="cc-err-msg">{erros[`rendimento_valor_${index}`]}</p>}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
 
-            {erroApi && <div className="alert alert-danger py-2 mt-3 mb-0">{erroApi}</div>}
+            {erroApi && <div className="cc-api-error">{erroApi}</div>}
 
-            <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-              <button className="btn btn-outline-secondary" onClick={() => navigate('/login')} disabled={salvando}>
+            <div className="cc-footer">
+              <button className="cc-cancel-btn" onClick={() => navigate('/login')} disabled={salvando}>
                 Cancelar
               </button>
-              <button className="btn btn-primary d-flex align-items-center gap-2"
-                onClick={handleSalvar} disabled={salvando}>
+              <button className="cc-submit-btn" onClick={handleSalvar} disabled={salvando}>
                 {salvando
-                  ? <><span className="spinner-border spinner-border-sm" role="status" /> Salvando...</>
-                  : <><Save size={15} /> Criar conta</>}
+                  ? <span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14 }} />
+                  : <Save size={14} />}
+                {salvando ? 'Salvando...' : 'Criar conta'}
               </button>
             </div>
-
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

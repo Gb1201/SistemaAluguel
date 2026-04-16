@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import {
   CheckCircle, XCircle, PlusCircle,
-  ClipboardList, Users, Car, Pencil, Trash2
+  ClipboardList, Users, Car, Pencil, Trash2,
+  TrendingUp, Activity
 } from 'lucide-react'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -15,27 +16,24 @@ const API_CLIENTES   = 'http://localhost:8080/clientes/nomes'
 const carroVazio = { marca: '', modelo: '', ano: '', placa: '' }
 
 const STATUS_CONFIG = {
-  Pendente:  { badge: 'badge-pendente',  label: 'Pendente'  },
-  Aprovado:  { badge: 'badge-aprovado',  label: 'Aprovado'  },
-  Reprovado: { badge: 'badge-cancelado', label: 'Reprovado' },
+  Pendente:  { label: 'Pendente',  bg: 'rgba(232,164,59,0.1)',   color: '#e8a43b', dot: '#e8a43b'   },
+  Aprovado:  { label: 'Aprovado',  bg: 'rgba(45,212,160,0.1)',   color: '#2dd4a0', dot: '#2dd4a0'   },
+  Reprovado: { label: 'Reprovado', bg: 'rgba(245,84,106,0.1)',   color: '#f5546a', dot: '#f5546a'   },
 }
 
-const CORES_PIZZA = ['#f59e0b', '#22c55e', '#ef4444']
+const CORES_PIZZA = ['#e8a43b', '#2dd4a0', '#f5546a']
 
 export default function DashboardAgente({ usuario }) {
-  const [pedidos, setPedidos]         = useState([])
-  const [carros, setCarros]           = useState([])
-  const [clientes, setClientes]       = useState([])
-  const [processando, setProcessando] = useState(null)
-
-  // Modal carro (cadastro e edição)
-  const [modalCarro, setModalCarro]   = useState(false)
-  const [formCarro, setFormCarro]     = useState(carroVazio)
-  const [editandoId, setEditandoId]   = useState(null) // null = cadastro, número = edição
+  const [pedidos, setPedidos]             = useState([])
+  const [carros, setCarros]               = useState([])
+  const [clientes, setClientes]           = useState([])
+  const [processando, setProcessando]     = useState(null)
+  const [modalCarro, setModalCarro]       = useState(false)
+  const [formCarro, setFormCarro]         = useState(carroVazio)
+  const [editandoId, setEditandoId]       = useState(null)
   const [salvandoCarro, setSalvandoCarro] = useState(false)
-  const [erroCarro, setErroCarro]     = useState('')
+  const [erroCarro, setErroCarro]         = useState('')
 
-  //  Loaders 
   const carregarPedidos = async () => {
     try {
       const res  = await fetch(API_PEDIDOS)
@@ -68,12 +66,9 @@ export default function DashboardAgente({ usuario }) {
   }
 
   useEffect(() => {
-    carregarPedidos()
-    carregarAutomoveis()
-    carregarClientes()
+    carregarPedidos(); carregarAutomoveis(); carregarClientes()
   }, [])
 
-  //  Pedidos 
   const atualizarStatus = async (id, status) => {
     setProcessando(id)
     try {
@@ -83,26 +78,18 @@ export default function DashboardAgente({ usuario }) {
     finally { setProcessando(null) }
   }
 
-  //  Automóvel: abrir modal 
   const abrirModalCadastro = () => {
-    setEditandoId(null)
-    setFormCarro(carroVazio)
-    setErroCarro('')
-    setModalCarro(true)
+    setEditandoId(null); setFormCarro(carroVazio); setErroCarro(''); setModalCarro(true)
   }
 
   const abrirModalEdicao = (carro) => {
     setEditandoId(carro.id)
     setFormCarro({ marca: carro.marca, modelo: carro.modelo, ano: carro.ano, placa: carro.placa })
-    setErroCarro('')
-    setModalCarro(true)
+    setErroCarro(''); setModalCarro(true)
   }
 
   const fecharModalCarro = () => {
-    setModalCarro(false)
-    setFormCarro(carroVazio)
-    setEditandoId(null)
-    setErroCarro('')
+    setModalCarro(false); setFormCarro(carroVazio); setEditandoId(null); setErroCarro('')
   }
 
   const handleCarroChange = (e) => {
@@ -110,7 +97,6 @@ export default function DashboardAgente({ usuario }) {
     setFormCarro(prev => ({ ...prev, [name]: value }))
   }
 
-  // POST ou PUT automóvel 
   const handleSalvarCarro = async () => {
     if (!formCarro.marca || !formCarro.modelo || !formCarro.ano || !formCarro.placa) {
       setErroCarro('Preencha todos os campos.'); return
@@ -124,38 +110,24 @@ export default function DashboardAgente({ usuario }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formCarro, ano: Number(formCarro.ano) }),
       })
-      if (!res.ok) {
-        const msg = await res.text()
-        throw new Error(msg || `Erro ${res.status}`)
-      }
-      fecharModalCarro()
-      carregarAutomoveis()
+      if (!res.ok) throw new Error(await res.text() || `Erro ${res.status}`)
+      fecharModalCarro(); carregarAutomoveis()
     } catch (err) {
       setErroCarro(err.message || 'Não foi possível salvar.')
     } finally { setSalvandoCarro(false) }
   }
 
-  //  DELETE automóvel ─
   const handleDeletarCarro = async (id, placa) => {
     if (!window.confirm(`Deletar o automóvel de placa ${placa}?`)) return
-
     try {
       const res = await fetch(`${API_AUTOMOVEIS}/${id}`, { method: 'DELETE' })
-
-      if (!res.ok) {
-        const mensagem = await res.text() 
-        throw new Error(mensagem)
-      }
-
+      if (!res.ok) throw new Error(await res.text())
       setCarros(prev => prev.filter(c => c.id !== id))
-      alert('Automóvel deletado com sucesso')
-
     } catch (err) {
-      alert(err.message || 'Não foi possível deletar o automóvel.')
+      alert(err.message || 'Não foi possível deletar.')
     }
   }
 
-  //  Dados para gráficos 
   const pendentes  = pedidos.filter(p => p.status === 'Pendente').length
   const aprovados  = pedidos.filter(p => p.status === 'Aprovado').length
   const reprovados = pedidos.filter(p => p.status === 'Reprovado').length
@@ -165,7 +137,6 @@ export default function DashboardAgente({ usuario }) {
     { name: 'Aprovados',  value: aprovados  },
     { name: 'Reprovados', value: reprovados },
   ]
-
   const dadosBar = [
     { name: 'Clientes',   valor: clientes.length },
     { name: 'Automóveis', valor: carros.length   },
@@ -176,277 +147,582 @@ export default function DashboardAgente({ usuario }) {
   const hora = new Date().getHours()
   const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite'
 
+  const statCards = [
+    { val: pedidos.length,  label: 'Pedidos',    icon: <ClipboardList size={14} />, color: '#5b8ef7' },
+    { val: clientes.length, label: 'Clientes',   icon: <Users size={14} />,         color: '#2dd4a0' },
+    { val: carros.length,   label: 'Automóveis', icon: <Car size={14} />,           color: '#e8a43b' },
+    { val: pendentes,       label: 'Pendentes',  icon: <Activity size={14} />,      color: '#f5546a' },
+  ]
+
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        .da-wrap { font-family: 'Sora', sans-serif; -webkit-font-smoothing: antialiased; }
+
+        /* ── Hero ── */
         .da-hero {
-          background: linear-gradient(135deg, #1e2540 0%, #0f1117 100%);
-          border-radius: 16px;
-          padding: 28px 32px;
+          background: linear-gradient(135deg, #0d1018 0%, #111520 60%, #0a0e16 100%);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 20px;
+          padding: 32px 36px;
           margin-bottom: 24px;
           position: relative;
           overflow: hidden;
         }
-        .da-hero::before {
-          content: '';
-          position: absolute;
-          top: -40px; right: -40px;
-          width: 200px; height: 200px;
-          background: radial-gradient(circle, rgba(79,110,247,0.3) 0%, transparent 70%);
-          border-radius: 50%;
+        .da-hero-orb1 {
+          position: absolute; top: -60px; right: -30px;
+          width: 280px; height: 220px;
+          background: radial-gradient(ellipse, rgba(232,164,59,0.12) 0%, transparent 70%);
+          pointer-events: none; border-radius: 50%;
         }
-        .da-hero-sub  { font-size: 13px; color: #8b92a8; margin: 0; }
-        .da-hero-title{ font-size: 22px; font-weight: 600; color: #fff; margin: 4px 0 0; }
+        .da-hero-orb2 {
+          position: absolute; bottom: -40px; left: 40%;
+          width: 200px; height: 150px;
+          background: radial-gradient(ellipse, rgba(91,142,247,0.08) 0%, transparent 70%);
+          pointer-events: none; border-radius: 50%;
+        }
+        .da-hero-tag {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: rgba(232,164,59,0.08);
+          border: 1px solid rgba(232,164,59,0.2);
+          color: #e8a43b; font-size: 10.5px; font-weight: 600;
+          padding: 3px 10px; border-radius: 20px; margin-bottom: 10px;
+          letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        .da-hero-sub  { font-size: 12.5px; color: #4a5270; margin: 0; }
+        .da-hero-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 26px; font-weight: 700;
+          color: #f0f2f8; margin: 4px 0 24px;
+          letter-spacing: -0.3px;
+        }
+
+        .da-stats { display: flex; gap: 14px; flex-wrap: wrap; }
         .da-stat {
-          background: rgba(255,255,255,0.06);
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 12px;
+          padding: 12px 18px;
+          min-width: 100px;
+          display: flex; align-items: center; gap: 12px;
+          transition: border-color 0.2s;
+        }
+        .da-stat:hover { border-color: rgba(255,255,255,0.12); }
+        .da-stat-icon {
+          width: 28px; height: 28px;
+          border-radius: 7px;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .da-stat-val   { font-size: 20px; font-weight: 700; color: #f0f2f8; line-height: 1; }
+        .da-stat-label { font-size: 10.5px; color: #4a5270; margin-top: 2px; letter-spacing: 0.3px; }
+
+        /* ── Sections ── */
+        .da-section-header {
+          display: flex; align-items: center; gap: 10px;
+          margin-bottom: 18px;
+        }
+        .da-section-icon {
+          width: 30px; height: 30px;
+          background: rgba(232,164,59,0.1);
+          border: 1px solid rgba(232,164,59,0.2);
+          border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          color: #e8a43b;
+        }
+        .da-section-title {
+          font-size: 13px; font-weight: 700;
+          color: #f0f2f8; letter-spacing: 0.1px;
+        }
+
+        /* ── Badges ── */
+        .da-status-pill {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 4px 11px; border-radius: 20px;
+          font-size: 11.5px; font-weight: 500;
+        }
+        .da-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ── Chart area ── */
+        .da-chart-label {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 9.5px; font-weight: 500; letter-spacing: 1.2px;
+          text-transform: uppercase; color: #4a5270; margin-bottom: 10px;
+        }
+
+        /* ── Buttons ── */
+        .da-btn-new {
+          display: flex; align-items: center; gap: 8px;
+          padding: 10px 22px;
+          background: linear-gradient(135deg, #e8a43b, #c27f22);
+          border: none; border-radius: 10px;
+          color: #000; font-size: 13px; font-weight: 700;
+          cursor: pointer; font-family: 'Sora', sans-serif;
+          box-shadow: 0 4px 16px rgba(232,164,59,0.28);
+          transition: all 0.2s; letter-spacing: 0.2px;
+        }
+        .da-btn-new:hover {
+          box-shadow: 0 6px 24px rgba(232,164,59,0.45);
+          transform: translateY(-1px);
+        }
+
+        .da-btn-edit {
+          display: inline-flex; align-items: center; gap: 5px;
+          padding: 5px 12px;
+          background: rgba(91,142,247,0.08);
+          border: 1px solid rgba(91,142,247,0.25);
+          border-radius: 7px;
+          color: #5b8ef7; font-size: 12px; font-weight: 500;
+          cursor: pointer; transition: all 0.15s;
+        }
+        .da-btn-edit:hover {
+          background: rgba(91,142,247,0.14);
+          border-color: rgba(91,142,247,0.4);
+        }
+
+        .da-btn-del {
+          display: inline-flex; align-items: center; gap: 5px;
+          padding: 5px 12px;
+          background: rgba(245,84,106,0.08);
+          border: 1px solid rgba(245,84,106,0.22);
+          border-radius: 7px;
+          color: #f5546a; font-size: 12px; font-weight: 500;
+          cursor: pointer; transition: all 0.15s;
+        }
+        .da-btn-del:hover {
+          background: rgba(245,84,106,0.14);
+          border-color: rgba(245,84,106,0.4);
+        }
+
+        /* ── Card override ── */
+        .da-card {
+          background: #0d1018;
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 18px;
+          box-shadow: 0 2px 24px rgba(0,0,0,0.3);
+          padding: 24px;
+          margin-bottom: 20px;
+        }
+
+        /* ── Modal ── */
+        .da-modal-overlay {
+          position: fixed; inset: 0; z-index: 1000;
+          background: rgba(4,5,10,0.75);
+          backdrop-filter: blur(8px);
+          display: flex; align-items: center; justify-content: center;
+        }
+        .da-modal {
+          background: #0d1018;
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 10px;
-          padding: 10px 16px;
-          min-width: 90px;
+          border-radius: 20px;
+          width: 100%; max-width: 480px;
+          box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+          overflow: hidden;
         }
-        .da-stat-val   { font-size: 20px; font-weight: 600; color: #fff; line-height: 1; }
-        .da-stat-label { font-size: 11px; color: #8b92a8; margin-top: 3px; }
-        .section-title {
-          font-size: 14px; font-weight: 600; color: #1a1d2e;
-          display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+        .da-modal-header {
+          padding: 24px 24px 0;
+          display: flex; align-items: center; justify-content: space-between;
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          padding-bottom: 18px;
         }
-        .section-title svg { color: #4f6ef7; }
-        .badge-pendente  { background:#fff8e1; color:#b45309; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:500; }
-        .badge-aprovado  { background:#e8f5e9; color:#2e7d32; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:500; }
-        .badge-cancelado { background:#fce4e4; color:#b91c1c; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:500; }
-        .table-hover tbody tr:hover { background: #fafbff; }
-        .btn-icon-edit {
-          border: 1px solid #c5cffa; background: #eef1ff; color: #4f6ef7;
-          border-radius: 7px; padding: 4px 8px; cursor: pointer;
-          display:inline-flex; align-items:center; gap:4px; font-size:12px;
-          transition: background 0.15s;
+        .da-modal-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 18px; font-weight: 700; color: #f0f2f8;
         }
-        .btn-icon-edit:hover { background: #dce3ff; }
-        .btn-icon-del {
-          border: 1px solid #fca5a5; background: #fef2f2; color: #ef4444;
-          border-radius: 7px; padding: 4px 8px; cursor: pointer;
-          display:inline-flex; align-items:center; gap:4px; font-size:12px;
-          transition: background 0.15s;
+        .da-modal-close {
+          width: 30px; height: 30px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 8px;
+          color: #8b94b0; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 16px; transition: all 0.15s;
         }
-        .btn-icon-del:hover { background: #fee2e2; }
+        .da-modal-close:hover {
+          background: rgba(245,84,106,0.1);
+          color: #f5546a;
+          border-color: rgba(245,84,106,0.25);
+        }
+        .da-modal-body { padding: 24px; }
+        .da-modal-footer {
+          padding: 0 24px 24px;
+          display: flex; gap: 10px; justify-content: flex-end;
+        }
+
+        .da-field-label {
+          font-size: 11px; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 0.8px;
+          color: #4a5270; margin-bottom: 7px; display: block;
+        }
+        .da-field-input {
+          width: 100%; padding: 10px 14px;
+          background: #111520;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 9px;
+          color: #f0f2f8;
+          font-family: 'Sora', sans-serif;
+          font-size: 13.5px; outline: none;
+          transition: border-color 0.18s, box-shadow 0.18s;
+        }
+        .da-field-input::placeholder { color: #2e3450; }
+        .da-field-input:focus {
+          border-color: rgba(232,164,59,0.45);
+          box-shadow: 0 0 0 3px rgba(232,164,59,0.08);
+        }
+        .da-modal-error {
+          padding: 10px 14px;
+          background: rgba(245,84,106,0.08);
+          border: 1px solid rgba(245,84,106,0.25);
+          border-radius: 9px;
+          font-size: 13px; color: #f9a0af;
+          margin-bottom: 0; margin-top: 8px;
+        }
+        .da-modal-cancel {
+          padding: 9px 20px;
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 9px;
+          color: #8b94b0; font-size: 13px;
+          cursor: pointer; font-family: 'Sora', sans-serif;
+          transition: all 0.15s;
+        }
+        .da-modal-cancel:hover { background: rgba(255,255,255,0.04); color: #f0f2f8; }
+        .da-modal-save {
+          display: flex; align-items: center; gap: 7px;
+          padding: 9px 22px;
+          background: linear-gradient(135deg, #e8a43b, #c27f22);
+          border: none; border-radius: 9px;
+          color: #000; font-size: 13px; font-weight: 700;
+          cursor: pointer; font-family: 'Sora', sans-serif;
+          box-shadow: 0 4px 14px rgba(232,164,59,0.25);
+          transition: all 0.18s;
+        }
+        .da-modal-save:hover:not(:disabled) {
+          box-shadow: 0 6px 22px rgba(232,164,59,0.45);
+          transform: translateY(-1px);
+        }
+        .da-modal-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Recharts overrides */
+        .recharts-text { fill: #4a5270 !important; font-family: 'Sora', sans-serif !important; }
+        .recharts-tooltip-wrapper .recharts-default-tooltip {
+          background: #0d1018 !important;
+          border: 1px solid rgba(255,255,255,0.1) !important;
+          border-radius: 10px !important;
+        }
+
+
+        /* ── Table Dark Override ── */
+        .table {
+          background: transparent !important;
+          color: #f0f2f8 !important;
+          margin-bottom: 0;
+          border-collapse: separate;
+          border-spacing: 0;
+        }
+
+        .table thead {
+          background: transparent !important;
+        }
+
+        .table thead th {
+          color: #4a5270 !important;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          font-weight: 600;
+          padding: 14px 12px;
+          border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+        }
+
+        .table tbody tr {
+          background: transparent !important;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+          transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+          background: rgba(255,255,255,0.03) !important;
+        }
+
+        .table td {
+          border: none !important;
+          padding: 14px 12px;
+          color: #d4d8e5;
+          vertical-align: middle;
+        }
+
+        /* Remove fundo branco do Bootstrap */
+        .table > :not(caption) > * > * {
+          background-color: transparent !important;
+        }
+
+        /* Zebra leve (opcional, fica bonito) */
+        .table tbody tr:nth-child(even) {
+          background: rgba(255,255,255,0.015);
+        }
+
+        /* Bordas arredondadas estilo SaaS */
+        .table thead tr th:first-child {
+          border-top-left-radius: 10px;
+        }
+        .table thead tr th:last-child {
+          border-top-right-radius: 10px;
+        }
+        .table tbody tr:last-child td:first-child {
+          border-bottom-left-radius: 10px;
+        }
+        .table tbody tr:last-child td:last-child {
+          border-bottom-right-radius: 10px;
+        }
+
+        /* Scroll container mais bonito */
+        .table-responsive {
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        /* Pequeno glow ao passar mouse (premium) */
+        .table tbody tr:hover td {
+          color: #f0f2f8;
+        }
+
+        /* Opcional: efeito glass */
+        .table tbody tr {
+          backdrop-filter: blur(6px);
+        }
       `}</style>
 
-      <div className="container py-4">
+      <div className="da-wrap">
 
-        {/*  Hero */}
+        {/* Hero */}
         <div className="da-hero">
+          <div className="da-hero-orb1" />
+          <div className="da-hero-orb2" />
+          <div className="da-hero-tag"><TrendingUp size={10} /> Painel do Agente</div>
           <p className="da-hero-sub">{saudacao},</p>
           <h2 className="da-hero-title">{primeiroNome} 👋</h2>
-          <div className="d-flex gap-3 mt-3 flex-wrap">
-            {[
-              { val: pedidos.length,   label: 'Pedidos'    },
-              { val: clientes.length,  label: 'Clientes'   },
-              { val: carros.length,    label: 'Automóveis' },
-              { val: pendentes,        label: 'Pendentes'  },
-            ].map(s => (
+          <div className="da-stats">
+            {statCards.map(s => (
               <div className="da-stat" key={s.label}>
-                <div className="da-stat-val">{s.val}</div>
-                <div className="da-stat-label">{s.label}</div>
+                <div className="da-stat-icon" style={{ background: `${s.color}18`, color: s.color }}>
+                  {s.icon}
+                </div>
+                <div>
+                  <div className="da-stat-val">{s.val}</div>
+                  <div className="da-stat-label">{s.label}</div>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Botão novo automóvel*/}
-        <div className="d-flex justify-content-end mb-4">
-          <button className="btn btn-primary d-flex align-items-center gap-2"
-            onClick={abrirModalCadastro}>
-            <PlusCircle size={15} /> Novo Automóvel
+        {/* Novo automóvel */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+          <button className="da-btn-new" onClick={abrirModalCadastro}>
+            <PlusCircle size={14} /> Novo Automóvel
           </button>
         </div>
 
-        {/* Gráficos */}
-        <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body p-4">
-            <div className="section-title">Visão geral</div>
-            <div className="row g-4">
-
-              {/* Pizza — status dos pedidos */}
-              <div className="col-md-6">
-                <p style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>
-                  Status dos pedidos
-                </p>
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie data={dadosPizza} dataKey="value" cx="50%" cy="50%"
-                      outerRadius={80} innerRadius={40} paddingAngle={3}>
-                      {dadosPizza.map((_, i) => (
-                        <Cell key={i} fill={CORES_PIZZA[i]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(v, n) => [v, n]} />
-                    <Legend iconType="circle" iconSize={10}
-                      formatter={v => <span style={{ fontSize: 12 }}>{v}</span>} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Barras — totais gerais */}
-              <div className="col-md-6">
-                <p style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>
-                  Totais do sistema
-                </p>
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={dadosBar} barSize={36}>
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip cursor={{ fill: '#f0f4ff' }} />
-                    <Bar dataKey="valor" fill="#4f6ef7" radius={[6,6,0,0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
+        {/* Charts */}
+        <div className="da-card">
+          <div className="da-section-header">
+            <div className="da-section-icon"><Activity size={14} /></div>
+            <span className="da-section-title">Visão geral</span>
+          </div>
+          <div className="row g-4">
+            <div className="col-md-6">
+              <p className="da-chart-label">Status dos pedidos</p>
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie data={dadosPizza} dataKey="value" cx="50%" cy="50%"
+                    outerRadius={82} innerRadius={44} paddingAngle={4}>
+                    {dadosPizza.map((_, i) => (
+                      <Cell key={i} fill={CORES_PIZZA[i]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ background: '#0d1018', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#f0f2f8', fontSize: 12 }}
+                    formatter={(v, n) => [v, n]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="col-md-6">
+              <p className="da-chart-label">Totais do sistema</p>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={dadosBar} barSize={36}>
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#4a5270' }} axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#4a5270' }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(232,164,59,0.06)' }}
+                    contentStyle={{ background: '#0d1018', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#f0f2f8', fontSize: 12 }} />
+                  <Bar dataKey="valor" fill="#e8a43b" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
 
         {/* Clientes */}
-        <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body p-4">
-            <div className="section-title"><Users size={15} /> Clientes</div>
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
-                <thead className="table-light">
-                  <tr>
-                    <th style={{ width: 70 }}>ID</th>
-                    <th>Nome</th>
+        <div className="da-card">
+          <div className="da-section-header">
+            <div className="da-section-icon"><Users size={14} /></div>
+            <span className="da-section-title">Clientes</span>
+          </div>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0">
+              <thead>
+                <tr><th>ID</th><th>Nome</th></tr>
+              </thead>
+              <tbody>
+                {clientes.length === 0 ? (
+                  <tr><td colSpan={2} style={{ textAlign: 'center', color: '#4a5270', padding: '24px' }}>Nenhum cliente cadastrado.</td></tr>
+                ) : clientes.map(c => (
+                  <tr key={c.id}>
+                    <td style={{ color: '#4a5270', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>#{c.id}</td>
+                    <td style={{ fontWeight: 500 }}>{c.nome}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {clientes.length === 0 ? (
-                    <tr><td colSpan={2} className="text-center text-muted py-4">Nenhum cliente.</td></tr>
-                  ) : clientes.map(c => (
-                    <tr key={c.id}>
-                      <td className="text-muted small">#{c.id}</td>
-                      <td className="fw-medium">{c.nome}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* Pedidos  */}
-        <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body p-4">
-            <div className="section-title"><ClipboardList size={15} /> Pedidos</div>
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
-                <thead className="table-light">
-                  <tr><th>Cliente</th><th>Carro</th><th>Período</th><th>Status</th><th>Ações</th></tr>
-                </thead>
-                <tbody>
-                  {pedidos.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center text-muted py-4">Nenhum pedido.</td></tr>
-                  ) : pedidos.map(p => (
+        {/* Pedidos */}
+        <div className="da-card">
+          <div className="da-section-header">
+            <div className="da-section-icon"><ClipboardList size={14} /></div>
+            <span className="da-section-title">Pedidos</span>
+          </div>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0">
+              <thead>
+                <tr><th>Cliente</th><th>Carro</th><th>Período</th><th>Status</th><th>Ações</th></tr>
+              </thead>
+              <tbody>
+                {pedidos.length === 0 ? (
+                  <tr><td colSpan={5} style={{ textAlign: 'center', color: '#4a5270', padding: '24px' }}>Nenhum pedido encontrado.</td></tr>
+                ) : pedidos.map(p => {
+                  const s = STATUS_CONFIG[p.status] || STATUS_CONFIG.Pendente
+                  return (
                     <tr key={p.id}>
-                      <td className="fw-medium">{p.cliente}</td>
-                      <td>{p.carro}</td>
-                      <td className="text-muted small">{p.dataInicio} → {p.dataFim}</td>
-                      <td><span className={STATUS_CONFIG[p.status]?.badge}>{p.status}</span></td>
+                      <td style={{ fontWeight: 500 }}>{p.cliente}</td>
+                      <td style={{ color: '#8b94b0' }}>{p.carro}</td>
+                      <td style={{ color: '#4a5270', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}>
+                        {p.dataInicio} → {p.dataFim}
+                      </td>
+                      <td>
+                        <span className="da-status-pill" style={{ background: s.bg, color: s.color }}>
+                          <span className="da-status-dot" style={{ background: s.dot }} />
+                          {s.label}
+                        </span>
+                      </td>
                       <td>
                         {p.status === 'Pendente' && (
-                          <div className="d-flex gap-2">
+                          <div style={{ display: 'flex', gap: 8 }}>
                             <button className="btn btn-sm btn-outline-success d-flex align-items-center gap-1"
                               onClick={() => atualizarStatus(p.id, 'APROVADO')} disabled={processando === p.id}>
                               {processando === p.id
                                 ? <span className="spinner-border spinner-border-sm" />
-                                : <CheckCircle size={13} />} Aprovar
+                                : <CheckCircle size={12} />} Aprovar
                             </button>
                             <button className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
                               onClick={() => atualizarStatus(p.id, 'CANCELADO')} disabled={processando === p.id}>
-                              <XCircle size={13} /> Reprovar
+                              <XCircle size={12} /> Reprovar
                             </button>
                           </div>
                         )}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/*  Automóveis */}
-        <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body p-4">
-            <div className="section-title"><Car size={15} /> Automóveis cadastrados</div>
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
-                <thead className="table-light">
-                  <tr><th>Marca</th><th>Modelo</th><th>Ano</th><th>Placa</th><th style={{ width: 120 }}>Ações</th></tr>
-                </thead>
-                <tbody>
-                  {carros.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center text-muted py-4">Nenhum automóvel.</td></tr>
-                  ) : carros.map(c => (
-                    <tr key={c.id}>
-                      <td className="fw-medium">{c.marca}</td>
-                      <td>{c.modelo}</td>
-                      <td className="text-muted">{c.ano}</td>
-                      <td><span className="badge text-bg-secondary">{c.placa}</span></td>
-                      <td>
-                        <div className="d-flex gap-2">
-                          <button className="btn-icon-edit" onClick={() => abrirModalEdicao(c)} title="Editar">
-                            <Pencil size={12} /> Editar
-                          </button>
-                          
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        {/* Automóveis */}
+        <div className="da-card">
+          <div className="da-section-header">
+            <div className="da-section-icon"><Car size={14} /></div>
+            <span className="da-section-title">Automóveis cadastrados</span>
           </div>
-        </div>
-
-        {/* Modal Cadastro / Edição de Automóvel */}
-        {modalCarro && (
-          <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content border-0 shadow-lg" style={{ borderRadius: 16 }}>
-                <div className="modal-header border-0 pt-4 px-4 pb-0">
-                  <h5 className="modal-title fw-semibold">
-                    {editandoId ? 'Editar Automóvel' : 'Cadastrar Automóvel'}
-                  </h5>
-                  <button className="btn-close" onClick={fecharModalCarro} />
-                </div>
-                <div className="modal-body px-4">
-                  <div className="row g-3">
-                    {[
-                      { name: 'marca',  label: 'Marca',  placeholder: 'Ex: Toyota', type: 'text'   },
-                      { name: 'modelo', label: 'Modelo', placeholder: 'Ex: Corolla',type: 'text'   },
-                      { name: 'ano',    label: 'Ano',    placeholder: 'Ex: 2023',   type: 'number' },
-                      { name: 'placa',  label: 'Placa',  placeholder: 'Ex: ABC-1234',type: 'text'  },
-                    ].map(f => (
-                      <div className="col-md-6" key={f.name}>
-                        <label className="form-label fw-medium small">{f.label}</label>
-                        <input type={f.type} name={f.name} className="form-control"
-                          placeholder={f.placeholder} value={formCarro[f.name]}
-                          onChange={handleCarroChange} />
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0">
+              <thead>
+                <tr><th>Marca</th><th>Modelo</th><th>Ano</th><th>Placa</th><th>Ações</th></tr>
+              </thead>
+              <tbody>
+                {carros.length === 0 ? (
+                  <tr><td colSpan={5} style={{ textAlign: 'center', color: '#4a5270', padding: '24px' }}>Nenhum automóvel cadastrado.</td></tr>
+                ) : carros.map(c => (
+                  <tr key={c.id}>
+                    <td style={{ fontWeight: 600 }}>{c.marca}</td>
+                    <td style={{ color: '#8b94b0' }}>{c.modelo}</td>
+                    <td style={{ color: '#4a5270', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>{c.ano}</td>
+                    <td>
+                      <span style={{
+                        fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
+                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                        padding: '2px 8px', borderRadius: 5, color: '#8b94b0', letterSpacing: 1
+                      }}>{c.placa}</span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="da-btn-edit" onClick={() => abrirModalEdicao(c)}>
+                          <Pencil size={11} /> Editar
+                        </button>
+                        <button className="da-btn-del" onClick={() => handleDeletarCarro(c.id, c.placa)}>
+                          <Trash2 size={11} /> Deletar
+                        </button>
                       </div>
-                    ))}
-                  </div>
-                  {erroCarro && <div className="alert alert-danger py-2 small mt-3 mb-0">{erroCarro}</div>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Modal */}
+        {modalCarro && (
+          <div className="da-modal-overlay" onClick={fecharModalCarro}>
+            <div className="da-modal" onClick={e => e.stopPropagation()}>
+              <div className="da-modal-header">
+                <h5 className="da-modal-title">
+                  {editandoId ? 'Editar Automóvel' : 'Cadastrar Automóvel'}
+                </h5>
+                <button className="da-modal-close" onClick={fecharModalCarro}>✕</button>
+              </div>
+              <div className="da-modal-body">
+                <div className="row g-3">
+                  {[
+                    { name: 'marca',  label: 'Marca',  placeholder: 'Ex: Toyota',   type: 'text'   },
+                    { name: 'modelo', label: 'Modelo', placeholder: 'Ex: Corolla',  type: 'text'   },
+                    { name: 'ano',    label: 'Ano',    placeholder: 'Ex: 2023',     type: 'number' },
+                    { name: 'placa',  label: 'Placa',  placeholder: 'Ex: ABC-1234', type: 'text'   },
+                  ].map(f => (
+                    <div className="col-md-6" key={f.name}>
+                      <label className="da-field-label">{f.label}</label>
+                      <input type={f.type} name={f.name}
+                        className="da-field-input"
+                        placeholder={f.placeholder}
+                        value={formCarro[f.name]}
+                        onChange={handleCarroChange} />
+                    </div>
+                  ))}
                 </div>
-                <div className="modal-footer border-0 px-4 pb-4 pt-2">
-                  <button className="btn btn-outline-secondary btn-sm" onClick={fecharModalCarro}>Cancelar</button>
-                  <button className="btn btn-primary btn-sm d-flex align-items-center gap-2"
-                    onClick={handleSalvarCarro} disabled={salvandoCarro}>
-                    {salvandoCarro
-                      ? <span className="spinner-border spinner-border-sm" />
-                      : <PlusCircle size={13} />}
-                    {salvandoCarro ? 'Salvando...' : editandoId ? 'Salvar alterações' : 'Cadastrar'}
-                  </button>
-                </div>
+                {erroCarro && <div className="da-modal-error">{erroCarro}</div>}
+              </div>
+              <div className="da-modal-footer">
+                <button className="da-modal-cancel" onClick={fecharModalCarro}>Cancelar</button>
+                <button className="da-modal-save" onClick={handleSalvarCarro} disabled={salvandoCarro}>
+                  {salvandoCarro
+                    ? <span className="spinner-border spinner-border-sm" style={{ width: 13, height: 13 }} />
+                    : <PlusCircle size={13} />}
+                  {salvandoCarro ? 'Salvando...' : editandoId ? 'Salvar alterações' : 'Cadastrar'}
+                </button>
               </div>
             </div>
           </div>
