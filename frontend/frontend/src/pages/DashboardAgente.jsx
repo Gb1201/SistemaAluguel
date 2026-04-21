@@ -673,9 +673,7 @@ export default function DashboardAgente({ usuario }) {
                         <button className="da-btn-edit" onClick={() => abrirModalEdicao(c)}>
                           <Pencil size={11} /> Editar
                         </button>
-                        <button className="da-btn-del" onClick={() => handleDeletarCarro(c.id, c.placa)}>
-                          <Trash2 size={11} /> Deletar
-                        </button>
+                        
                       </div>
                     </td>
                   </tr>

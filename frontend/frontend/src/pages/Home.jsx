@@ -323,7 +323,7 @@ export default function Home() {
               <Car size={18} color="#000" strokeWidth={2.2} />
             </div>
             <span className="hm-nav-logo-text">AlugaFácil</span>
-            <span className="hm-nav-badge">v2.0</span>
+            <span className="hm-nav-badge"></span>
           </div>
           <button className="hm-btn-nav" onClick={() => navigate('/login')}>
             Entrar <ArrowRight size={14} />
